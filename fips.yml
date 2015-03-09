@@ -1,0 +1,7 @@
+#
+# oryol-tools
+#
+---
+imports:
+    drahtgitter: 
+        git: https://github.com/floooh/drahtgitter.git
