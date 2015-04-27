@@ -13,6 +13,10 @@ class ModelExporter {
 public:
     /// set aiProcess scene processing flags
     void SetAiProcessFlags(unsigned int flags);
+    /// set component removal flags (PP_RVC_FLAGS)
+    void SetAiProcessRemoveComponentsFlags(unsigned int flags);
+    /// set primitive type removal flags (PP_SBP_REMOVE)
+    void SetAiProcessSortByPTypeRemoveFlags(unsigned int flags);
     /// perform export
     bool Import(const std::string& path);
     /// get pointer to imported scene
@@ -22,6 +26,8 @@ private:
     Assimp::Importer importer;
     const aiScene* scene = nullptr;
     unsigned int aiProcessFlags = 0;
+    unsigned int aiProcessRemoveComponentsFlags = 0;
+    unsigned int aiProcessSortByPTypeRemoveFlags = 0;
 };
 
 } // namespace OryolTools

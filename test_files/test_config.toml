@@ -1,10 +1,11 @@
+#-------------------------------------------------------------------------------
 # aiProcess: assimp scene processing flags
 #
 #   CalcTangentSpace
 #   JoinIdenticalVertices
 #   MakeLeftHanded
 #   Triangulate
-#   RemoveComponent
+#   RemoveComponent             -- see PP_RVC_FLAGS
 #   GenNormals
 #   GenSmoothNormals
 #   SplitLargeMeshes
@@ -14,7 +15,7 @@
 #   ImproveCacheLocality
 #   RemoveRedundantMaterials
 #   FixInfacingNormals
-#   SortByPType
+#   SortByPType                 -- see PP_SBP_REMOVE
 #   FindDegenerates
 #   FindInvalidData
 #   GenUVCoords
@@ -41,4 +42,79 @@ aiProcess = [
     "OptimizeGraph",
     "OptimizeMeshes"
 ]
+
+#-------------------------------------------------------------------------------
+# PP_RVC_FLAGS: what components to remove when RemoveComponents aiProcess
+# flag is set.
+#
+#   NORMALS
+#   TANGENTS_AND_BITANGENTS
+#   COLORS
+#   COLORSn(0..7)
+#   TEXCOORDS
+#   TEXCOORDSn(0..7)
+#   BONEWEIGHTS
+#   ANIMATIONS
+#   TEXTURES 
+#   LIGHTS
+#   CAMERAS
+#   MESHES 
+#   MATERIALS
+#
+PP_RVC_FLAGS = [
+    "BONEWEIGHTS",
+    "ANIMATIONS",
+    "LIGHTS",
+    "CAMERAS",
+    "COLORS",
+    "TEXCOORDSn1",
+    "TEXCOORDSn2"
+]
+
+#-------------------------------------------------------------------------------
+# PP_SBP_REMOVE: what primitive types to remove when SortByPType aiProcess
+# flag is set.
+#
+#   POINT
+#   LINE
+#   TRIANGLE
+#   POLYGON
+#
+PP_SBP_REMOVE = [
+    "POINT",
+    "LINE"
+]
+
+#-------------------------------------------------------------------------------
+# VertexPacking: vertex packing rules
+#
+[VertexPacking]
+    [Position]
+        format = "Float3"
+    [Normal]
+        format = "Byte4N"
+    [TexCoord0]
+        format = "Short2"
+        scale = 4096
+    [TexCoord1]
+        format = "Short2"
+        scale = 4096
+    [TexCoord2]
+        format = "Short2"
+        scale = 4096
+    [TexCoord3]
+        format = "Short3"
+        scale = 4096
+    [Binormal]
+        format = "Byte4N"
+    [Tangent]
+        format = "Byte4N"
+    [Weight]
+        format = "UByte4N"
+    [Indices]
+        format = "UByte4"
+    [Color0]
+        format = "UByte4N"
+    [Color1]
+        format = "UByte4N"
 

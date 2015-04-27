@@ -4,8 +4,72 @@
 #include "Config.h"
 #include "ExportUtil/Log.h"
 #include "assimp/postprocess.h"
+#include "assimp/scene.h"
+#include "assimp/config.h"
 
 namespace OryolTools {
+
+struct NameAndValue {
+    const char* name;
+    unsigned int val;
+};
+
+static NameAndValue aiProcessFlags[] = {
+    { "CalcTangentSpace", aiProcess_CalcTangentSpace },
+    { "JoinIdenticalVertices", aiProcess_JoinIdenticalVertices },
+    { "MakeLeftHanded", aiProcess_MakeLeftHanded },
+    { "Triangulate", aiProcess_Triangulate },
+    { "RemoveComponent", aiProcess_RemoveComponent },
+    { "GenNormals", aiProcess_GenNormals },
+    { "GenSmoothNormals", aiProcess_GenSmoothNormals },
+    { "SplitLargeMeshes", aiProcess_SplitLargeMeshes },
+    { "PreTransformVertices", aiProcess_PreTransformVertices },
+    { "LimitBoneWeights", aiProcess_LimitBoneWeights },
+    { "ValidateDataStructure", aiProcess_ValidateDataStructure },
+    { "ImproveCacheLocality", aiProcess_ImproveCacheLocality },
+    { "RemoveRedundantMaterials", aiProcess_RemoveRedundantMaterials },
+    { "FixInfacingNormals", aiProcess_FixInfacingNormals },
+    { "SortByPType", aiProcess_SortByPType },
+    { "FindDegenerates", aiProcess_FindDegenerates },
+    { "FindInvalidData", aiProcess_FindInvalidData },
+    { "GenUVCoords", aiProcess_GenUVCoords },
+    { "TransformUVCoords", aiProcess_TransformUVCoords },
+    { "FindInstances", aiProcess_FindInstances },
+    { "OptimizeMeshes", aiProcess_OptimizeMeshes },
+    { "OptimizeGraph", aiProcess_OptimizeGraph },
+    { "FlipUVs", aiProcess_FlipUVs },
+    { "FlipWindingOrder", aiProcess_FlipWindingOrder },
+    { "SplitByBoneCount", aiProcess_SplitByBoneCount },
+    { "Debone", aiProcess_Debone }
+};
+static NameAndValue componentFlags[] = {
+    { "NORMALS", aiComponent_NORMALS },
+    { "TANGENTS_AND_BITANGENTS", aiComponent_TANGENTS_AND_BITANGENTS },
+    { "COLORS", aiComponent_COLORS },
+    { "COLORS0", aiComponent_COLORSn(0) },
+    { "COLORS1", aiComponent_COLORSn(1) },
+    { "COLORS2", aiComponent_COLORSn(2) },
+    { "COLORS3", aiComponent_COLORSn(3) },
+    { "TEXCOORDS", aiComponent_TEXCOORDS },
+    { "TEXCOORDS0", aiComponent_TEXCOORDSn(0) },
+    { "TEXCOORDS1", aiComponent_TEXCOORDSn(1) },
+    { "TEXCOORDS2", aiComponent_TEXCOORDSn(2) },
+    { "TEXCOORDS3", aiComponent_TEXCOORDSn(3) },
+    { "BONEWEIGHTS", aiComponent_BONEWEIGHTS },
+    { "ANIMATIONS", aiComponent_ANIMATIONS },
+    { "TEXTURES", aiComponent_TEXTURES },
+    { "LIGHTS", aiComponent_LIGHTS },
+    { "CAMERAS", aiComponent_CAMERAS },
+    { "MESHES", aiComponent_MESHES },
+    { "MATERIALS", aiComponent_MATERIALS }
+};
+
+static NameAndValue primTypeFlags[] = {
+    { "POINT", aiPrimitiveType_POINT },
+    { "LINE", aiPrimitiveType_LINE },
+    { "TRIANGLE", aiPrimitiveType_TRIANGLE },
+    { "POLYGON", aiPrimitiveType_POLYGON }
+};
 
 //------------------------------------------------------------------------------
 bool
@@ -27,92 +91,58 @@ Config::GetAiProcessFlags() const {
     if (this->config.contains("aiProcess")) {
         auto flags = this->config.get("aiProcess");
         for (const auto& item : flags->as_array()->get()) {
-            const std::string val = item->as<std::string>()->get();
-            if (val == "CalcTangentSpace") {
-                result |= aiProcess_CalcTangentSpace;
-            }
-            else if (val == "JoinIdenticalVertices") {
-                result |= aiProcess_JoinIdenticalVertices;
-            }
-            else if (val == "MakeLeftHanded") {
-                result |= aiProcess_MakeLeftHanded;
-            }
-            else if (val == "Triangulate") {
-                result |= aiProcess_Triangulate;
-            }
-            else if (val == "RemoveComponent") {
-                result |= aiProcess_RemoveComponent;
-            }
-            else if (val == "GenNormals") {
-                result |= aiProcess_GenNormals;
-            }
-            else if (val == "GenSmoothNormals") {
-                result |= aiProcess_GenSmoothNormals;
-            }
-            else if (val == "SplitLargeMeshes") {
-                result |= aiProcess_SplitLargeMeshes;
-            }
-            else if (val == "PreTransformVertices") {
-                result |= aiProcess_PreTransformVertices;
-            }
-            else if (val == "LimitBoneWeights") {
-                result |= aiProcess_LimitBoneWeights;
-            }
-            else if (val == "ValidateDataStructure") {
-                result |= aiProcess_ValidateDataStructure;
-            }
-            else if (val == "ImproveCacheLocality") {
-                result |= aiProcess_ImproveCacheLocality;
-            }
-            else if (val == "RemoveRedundantMaterials") {
-                result |= aiProcess_RemoveRedundantMaterials;
-            }
-            else if (val == "FixInfacingNormals") {
-                result |= aiProcess_FixInfacingNormals;
-            }
-            else if (val == "SortByPType") {
-                result |= aiProcess_SortByPType;
-            }
-            else if (val == "FindDegenerates") {
-                result |= aiProcess_FindDegenerates;
-            }
-            else if (val == "FindInvalidData") {
-                result |= aiProcess_FindInvalidData;
-            }
-            else if (val == "GenUVCoords") {
-                result |= aiProcess_GenUVCoords;
-            }
-            else if (val == "TransformUVCoords") {
-                result |= aiProcess_TransformUVCoords;
-            }
-            else if (val == "FindInstances") {
-                result |= aiProcess_FindInstances;
-            }
-            else if (val == "OptimizeMeshes") {
-                result |= aiProcess_OptimizeMeshes;
-            }
-            else if (val == "OptimizeGraph") {
-                result |= aiProcess_OptimizeGraph;
-            }
-            else if (val == "FlipUVs") {
-                result |= aiProcess_FlipUVs;
-            }
-            else if (val == "FlipWindingOrder") {
-                result |= aiProcess_FlipWindingOrder;
-            }
-            else if (val == "SplitByBoneCount") {
-                result |= aiProcess_SplitByBoneCount;
-            }
-            else if (val == "Debone") {
-                result |= aiProcess_Debone;
-            }
-            else {
-                Log::Fatal("Invalid aiProcess flag: '%s'\n", val.c_str());
+            const std::string name = item->as<std::string>()->get();
+            for (const auto& flagItem : aiProcessFlags) {
+                if (name == flagItem.name) {
+                    result |= flagItem.val;
+                }
             }
         }
     }
     else {
-        Log::Warn("no aiProcess entry in config!");
+        Log::Warn("no aiProcess entry in config!\n");
+    }
+    return result;
+}
+
+//------------------------------------------------------------------------------
+unsigned int
+Config::GetAiProcessRemoveComponentsFlags() const {
+    unsigned int result = 0;
+    if (this->config.contains("PP_RVC_FLAGS")) {
+        auto flags = this->config.get("PP_RVC_FLAGS");
+        for (const auto& item : flags->as_array()->get()) {
+            const std::string name = item->as<std::string>()->get();
+            for (const auto& rvcItem : componentFlags) {
+                if (name == rvcItem.name) {
+                    result |= rvcItem.val;
+                }
+            }
+        }
+    }
+    else {
+        Log::Warn("no PP_RVC_FLAGS in config!\n");
+    }
+    return result;
+}
+
+//------------------------------------------------------------------------------
+unsigned int
+Config::GetAiProcessSortByPTypeRemoveFlags() const {
+    unsigned int result = 0;
+    if (this->config.contains("PP_SBP_REMOVE")) {
+        auto flags = this->config.get("PP_SBP_REMOVE");
+        for (const auto& item : flags->as_array()->get()) {
+            const std::string name = item->as<std::string>()->get();
+            for (const auto& primTypeItem : primTypeFlags) {
+                if (name == primTypeItem.name) {
+                    result |= primTypeItem.val;
+                }
+            }
+        }
+    }
+    else {
+        Log::Warn("no PP_SBP_REMOVE in config!\n");
     }
     return result;
 }

@@ -17,11 +17,25 @@ ModelExporter::SetAiProcessFlags(unsigned int flags) {
 }
 
 //------------------------------------------------------------------------------
+void
+ModelExporter::SetAiProcessRemoveComponentsFlags(unsigned int flags) {
+    this->aiProcessRemoveComponentsFlags = flags;
+}
+
+//------------------------------------------------------------------------------
+void
+ModelExporter::SetAiProcessSortByPTypeRemoveFlags(unsigned int flags) {
+    this->aiProcessSortByPTypeRemoveFlags = flags;
+}
+
+//------------------------------------------------------------------------------
 bool
 ModelExporter::Import(const std::string& path) {
     assert(!path.empty());
 
-    this->importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+    this->importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, this->aiProcessRemoveComponentsFlags);
+    this->importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, this->aiProcessSortByPTypeRemoveFlags);
+
     this->scene = importer.ReadFile(path, aiProcessFlags);
     if (!this->scene) {
         Log::Warn("Failed to import file '%s': %s\n", path.c_str(), importer.GetErrorString());

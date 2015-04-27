@@ -49,6 +49,7 @@ main(int argc, const char** argv) {
         ModelExporter modelExporter;
         std::string inPath = args.GetString("-model");
         modelExporter.SetAiProcessFlags(config.GetAiProcessFlags());
+        modelExporter.SetAiProcessSortByPTypeRemoveFlags(config.GetAiProcessSortByPTypeRemoveFlags());
         if (!modelExporter.Import(inPath)) {
             return 10;
         }
