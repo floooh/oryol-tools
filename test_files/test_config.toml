@@ -86,35 +86,35 @@ PP_SBP_REMOVE = [
 ]
 
 #-------------------------------------------------------------------------------
-# VertexPacking: vertex packing rules
+# Layout: vertex processing and packing rules
 #
-[VertexPacking]
-    [Position]
+[Layout]
+    [Layout.Position]
         format = "Float3"
-    [Normal]
+    [Layout.Normal]
         format = "Byte4N"
-    [TexCoord0]
+    [Layout.TexCoord0]
         format = "Short2"
         scale = 4096
-    [TexCoord1]
+    [Layout.TexCoord1]
         format = "Short2"
         scale = 4096
-    [TexCoord2]
+    [Layout.TexCoord2]
         format = "Short2"
         scale = 4096
-    [TexCoord3]
+    [Layout.TexCoord3]
         format = "Short3"
         scale = 4096
-    [Binormal]
+    [Layout.Binormal]
         format = "Byte4N"
-    [Tangent]
+    [Layout.Tangent]
         format = "Byte4N"
-    [Weight]
+    [Layout.Weight]
         format = "UByte4N"
-    [Indices]
+    [Layout.Indices]
         format = "UByte4"
-    [Color0]
+    [Layout.Color0]
         format = "UByte4N"
-    [Color1]
+    [Layout.Color1]
         format = "UByte4N"
 

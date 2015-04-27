@@ -4,6 +4,7 @@
     @class OryolTools::Config
     @brief config file wrapper
 */
+#include "ExportUtil/Vertex.h"
 #include "cpptoml.h"
 #include <string>
 
@@ -19,6 +20,8 @@ public:
     unsigned int GetAiProcessRemoveComponentsFlags() const;
     /// get the remove primitive type flag mast (PP_SBP_REMOVE)
     unsigned int GetAiProcessSortByPTypeRemoveFlags() const;
+    /// get the vertex layout
+    VertexLayout GetLayout() const;
 
 private:
     cpptoml::table config;

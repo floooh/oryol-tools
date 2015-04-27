@@ -6,6 +6,7 @@
 */
 #include <string>
 #include "assimp/Importer.hpp"
+#include "ExportUtil/Vertex.h"
 
 namespace OryolTools {
 
@@ -17,6 +18,8 @@ public:
     void SetAiProcessRemoveComponentsFlags(unsigned int flags);
     /// set primitive type removal flags (PP_SBP_REMOVE)
     void SetAiProcessSortByPTypeRemoveFlags(unsigned int flags);
+    /// set vertex layout description
+    void SetVertexLayout(const VertexLayout& layout);
     /// perform export
     bool Import(const std::string& path);
     /// get pointer to imported scene
@@ -28,6 +31,7 @@ private:
     unsigned int aiProcessFlags = 0;
     unsigned int aiProcessRemoveComponentsFlags = 0;
     unsigned int aiProcessSortByPTypeRemoveFlags = 0;
+    VertexLayout vertexLayout;
 };
 
 } // namespace OryolTools

@@ -6,6 +6,7 @@
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "assimp/config.h"
+#include <iostream>
 
 namespace OryolTools {
 
@@ -145,6 +146,52 @@ Config::GetAiProcessSortByPTypeRemoveFlags() const {
         Log::Warn("no PP_SBP_REMOVE in config!\n");
     }
     return result;
+}
+
+//------------------------------------------------------------------------------
+VertexLayout
+Config::GetLayout() const {
+    if (this->config.contains("Layout")) {
+        VertexLayout result;
+        auto layout = this->config.get("Layout")->as_table();
+        for (int attrIndex = 0; attrIndex < VertexAttr::NumVertexAttrs; attrIndex++) {
+            const std::string& attrName = VertexAttr::ToString((VertexAttr::Code)attrIndex);
+            if (layout->contains(attrName)) {
+                auto attr = layout->get(attrName)->as_table();
+                if (attr->contains("format")) {
+                    auto format = attr->get("format");
+                    result.Components[attrIndex].format = VertexFormat::FromString(format->as<std::string>()->get());
+                }
+                if (attr->contains("scale")) {
+                    auto scale = attr->get("scale");
+                    float scaleValue = 1.0f;
+                    if (scale->as<double>()) {
+                        scaleValue = scale->as<double>()->get();
+                    }
+                    else if (scale->as<int64_t>()) {
+                        scaleValue = scale->as<int64_t>()->get();
+                    }
+                    result.Components[attrIndex].scale = scaleValue;
+                }
+                if (attr->contains("bias")) {
+                    auto bias = attr->get("bias");
+                    float biasValue = 0.0f;
+                    if (bias->as<double>()) {
+                        biasValue = bias->as<double>()->get();
+                    }
+                    else if (bias->as<int64_t>()) {
+                        biasValue = bias->as<int64_t>()->get();
+                    }
+                    result.Components[attrIndex].bias = biasValue;
+                }
+            }
+        }
+        return result;
+    }
+    else {
+        Log::Fatal("no VertexLayout in config!");
+        return VertexLayout();
+    }
 }
 
 } // namesapce OryolTools

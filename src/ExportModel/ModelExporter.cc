@@ -29,6 +29,12 @@ ModelExporter::SetAiProcessSortByPTypeRemoveFlags(unsigned int flags) {
 }
 
 //------------------------------------------------------------------------------
+void
+ModelExporter::SetVertexLayout(const VertexLayout& layout) {
+    this->vertexLayout = layout;
+}
+
+//------------------------------------------------------------------------------
 bool
 ModelExporter::Import(const std::string& path) {
     assert(!path.empty());

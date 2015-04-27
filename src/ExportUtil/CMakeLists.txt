@@ -4,5 +4,6 @@ fips_begin_lib(ExportUtil)
         CmdLineArgs.cc CmdLineArgs.h
         JSONDumper.cc JSONDumper.h
         Config.cc Config.h
+        Vertex.h
     )
 fips_end_lib(ExportUtil)
