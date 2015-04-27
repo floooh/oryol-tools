@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 #include "CmdLineArgs.h"
 #include "ExportUtil/Log.h"
-#include <assert.h>
+#include <cassert>
 
 namespace OryolTools {
 

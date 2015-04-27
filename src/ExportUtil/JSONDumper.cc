@@ -4,7 +4,7 @@
 #include "JSONDumper.h"
 #include "assimp/scene.h"
 #include "cJSON.h"
-#include <assert.h>
+#include <cassert>
 #include <cstdlib>
 
 namespace OryolTools {

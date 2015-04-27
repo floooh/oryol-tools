@@ -6,8 +6,9 @@ if (NOT FIPS_IMPORT)
     get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
     include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
 
-    # cpptoml requires exceptions enabled
+    # cpptoml requires exceptions and RTTI enabled
     set(FIPS_EXCEPTIONS ON CACHE BOOL "Enable C++ exceptions" FORCE)
+    set(FIPS_RTTI ON CACHE BOOL "Enable C++ RTTI" FORCE)
     
     fips_setup()
     fips_project(oryol-tools)

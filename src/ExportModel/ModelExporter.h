@@ -11,6 +11,8 @@ namespace OryolTools {
 
 class ModelExporter {
 public:
+    /// set aiProcess scene processing flags
+    void SetAiProcessFlags(unsigned int flags);
     /// perform export
     bool Import(const std::string& path);
     /// get pointer to imported scene
@@ -19,6 +21,7 @@ public:
 private:
     Assimp::Importer importer;
     const aiScene* scene = nullptr;
+    unsigned int aiProcessFlags = 0;
 };
 
 } // namespace OryolTools

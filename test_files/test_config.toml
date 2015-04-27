@@ -1,0 +1,44 @@
+# aiProcess: assimp scene processing flags
+#
+#   CalcTangentSpace
+#   JoinIdenticalVertices
+#   MakeLeftHanded
+#   Triangulate
+#   RemoveComponent
+#   GenNormals
+#   GenSmoothNormals
+#   SplitLargeMeshes
+#   PreTransformVertices
+#   LimitBoneWeights
+#   ValidateDataStructure
+#   ImproveCacheLocality
+#   RemoveRedundantMaterials
+#   FixInfacingNormals
+#   SortByPType
+#   FindDegenerates
+#   FindInvalidData
+#   GenUVCoords
+#   TransformUVCoords
+#   FindInstances
+#   OptimizeMeshes
+#   OptimizeGraph
+#   FlipUVs
+#   FlipWindingOrder
+#   SplitByBoneCount
+#   Debone
+#
+aiProcess = [
+    "CalcTangentSpace",
+    "JoinIdenticalVertices",
+    "Triangulate",
+    "GenNormals",
+    "ImproveCacheLocality",
+    "RemoveRedundantMaterials",
+    "SortByPType",
+    "FindDegenerates",
+    "FindInvalidData",
+    "GenUVCoords",
+    "OptimizeGraph",
+    "OptimizeMeshes"
+]
+
