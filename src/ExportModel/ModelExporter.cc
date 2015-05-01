@@ -11,6 +11,14 @@
 namespace OryolTools {
 
 //------------------------------------------------------------------------------
+ModelExporter::~ModelExporter() {
+    this->scene = 0;
+    this->mesh.VertexBuffer.Discard();
+    this->mesh.IndexBuffer.Discard();
+    this->mesh.PrimGroups.clear();
+}
+
+//------------------------------------------------------------------------------
 void
 ModelExporter::SetAiProcessFlags(unsigned int flags) {
     this->aiProcessFlags = flags;
@@ -63,12 +71,14 @@ ModelExporter::Import(const std::string& path) {
 bool
 ModelExporter::Export(const std::string& path) {
     assert(!path.empty());
+    assert(!this->mesh.VertexBuffer.IsValid());
+    assert(!this->mesh.IndexBuffer.IsValid());
+    assert(this->mesh.PrimGroups.empty());
 
     this->exportVertices();
     this->exportIndices();
+    this->exportPrimGroups();
 
-    this->vertexBuffer.Discard();
-    this->indexBuffer.Discard();
     return true;
 }
 
@@ -77,7 +87,7 @@ bool
 ModelExporter::exportVertices() {
     assert(nullptr != this->scene);
     assert(nullptr != this->scene->mMeshes);
-    assert(!this->vertexBuffer.IsValid());
+    assert(!this->mesh.VertexBuffer.IsValid());
 
     // compute overall number of vertices
     int allNumVertices = 0;
@@ -119,38 +129,38 @@ ModelExporter::exportVertices() {
 
     // export vertices, all aiScene meshes go into a single vertex buffer
     int dstIndex = 0;
-    this->vertexBuffer.Setup(layout, allNumVertices);
+    this->mesh.VertexBuffer.Setup(layout, allNumVertices);
     for (unsigned int meshIndex = 0; meshIndex < this->scene->mNumMeshes; meshIndex++) {
         const aiMesh* curMesh = this->scene->mMeshes[meshIndex];
         const int numVerts = curMesh->mNumVertices;
         assert((dstIndex + numVerts) <= allNumVertices);
         if (layout.HasAttr(VertexAttr::Position)) {
-            this->vertexBuffer.Write(VertexAttr::Position, dstIndex, numVerts, (const float*)curMesh->mVertices, 3, 3);
+            this->mesh.VertexBuffer.Write(VertexAttr::Position, dstIndex, numVerts, (const float*)curMesh->mVertices, 3, 3);
         }
         if (layout.HasAttr(VertexAttr::Normal)) {
             assert(curMesh->HasNormals());
-            this->vertexBuffer.Write(VertexAttr::Normal, dstIndex, numVerts, (const float*)curMesh->mNormals, 3, 3);
+            this->mesh.VertexBuffer.Write(VertexAttr::Normal, dstIndex, numVerts, (const float*)curMesh->mNormals, 3, 3);
         }
         if (layout.HasAttr(VertexAttr::Tangent)) {
             assert(curMesh->HasTangentsAndBitangents());
-            this->vertexBuffer.Write(VertexAttr::Tangent, dstIndex, numVerts, (const float*)curMesh->mTangents, 3, 3);
+            this->mesh.VertexBuffer.Write(VertexAttr::Tangent, dstIndex, numVerts, (const float*)curMesh->mTangents, 3, 3);
         }
         if (layout.HasAttr(VertexAttr::Binormal)) {
             assert(curMesh->HasTangentsAndBitangents());
-            this->vertexBuffer.Write(VertexAttr::Binormal, dstIndex, numVerts, (const float*)curMesh->mBitangents, 3, 3);
+            this->mesh.VertexBuffer.Write(VertexAttr::Binormal, dstIndex, numVerts, (const float*)curMesh->mBitangents, 3, 3);
         }
         for (int i = 0; i < 4; i++) {
             const VertexAttr::Code attr = (VertexAttr::Code)(VertexAttr::TexCoord0 + i);
             if (layout.HasAttr(attr)) {
                 assert(curMesh->HasTextureCoords(i));
-                this->vertexBuffer.Write(attr, dstIndex, numVerts, (const float*)curMesh->mTextureCoords[i], 3, 3);
+                this->mesh.VertexBuffer.Write(attr, dstIndex, numVerts, (const float*)curMesh->mTextureCoords[i], 3, 3);
             }
         }
         for (int i = 0; i < 2; i++) {
             const VertexAttr::Code attr = (VertexAttr::Code)(VertexAttr::Color0 + i);
             if (layout.HasAttr(attr)) {
                 assert(curMesh->HasVertexColors(i));
-                this->vertexBuffer.Write(attr, dstIndex, numVerts, (const float*)curMesh->mColors[i], 4, 4);
+                this->mesh.VertexBuffer.Write(attr, dstIndex, numVerts, (const float*)curMesh->mColors[i], 4, 4);
             }
         }
         // FIXME: skinned vertices components
@@ -165,7 +175,7 @@ bool
 ModelExporter::exportIndices() {
     assert(nullptr != this->scene);
     assert(nullptr != this->scene->mMeshes);
-    assert(!this->indexBuffer.IsValid());
+    assert(!this->mesh.IndexBuffer.IsValid());
 
     // compute overall number of indices
     int allNumIndices = 0;
@@ -182,18 +192,38 @@ ModelExporter::exportIndices() {
 
     // export indices
     int baseVertexIndex = 0;
-    this->indexBuffer.Setup(this->indexSize, allNumIndices);
+    this->mesh.IndexBuffer.Setup(this->indexSize, allNumIndices);
     for (unsigned int meshIndex = 0; meshIndex < this->scene->mNumMeshes; meshIndex++) {
         const aiMesh* curMesh = this->scene->mMeshes[meshIndex];
         int startIndex = 0;
         for (unsigned int faceIndex = 0; faceIndex < curMesh->mNumFaces; faceIndex++) {
             const aiFace& curFace = curMesh->mFaces[faceIndex];
             assert(curFace.mIndices);
-            this->indexBuffer.Write(startIndex, curFace.mIndices, curFace.mNumIndices, baseVertexIndex);
+            this->mesh.IndexBuffer.Write(startIndex, curFace.mIndices, curFace.mNumIndices, baseVertexIndex);
             startIndex += curFace.mNumIndices;
             assert(startIndex <= allNumIndices);
         }
         baseVertexIndex += curMesh->mNumVertices;
+    }
+    return true;
+}
+
+//------------------------------------------------------------------------------
+bool
+ModelExporter::exportPrimGroups() {
+    assert(nullptr != this->scene);
+    assert(nullptr != this->scene->mMeshes);
+    assert(this->mesh.PrimGroups.empty());
+
+    int curBaseElement = 0;
+    for (unsigned int meshIndex = 0; meshIndex < this->scene->mNumMeshes; meshIndex++) {
+        const aiMesh* curMesh = this->scene->mMeshes[meshIndex];
+        PrimitiveGroup primGroup;
+        primGroup.Type = PrimitiveGroup::Triangles;
+        primGroup.BaseElement = curBaseElement;
+        primGroup.NumElements = curMesh->mNumFaces * 3;
+        this->mesh.PrimGroups.push_back(primGroup);
+        curBaseElement += primGroup.NumElements;
     }
     return true;
 }

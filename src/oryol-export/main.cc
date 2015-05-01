@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 #include "ExportUtil/CmdLineArgs.h"
 #include "ExportUtil/Log.h"
-#include "ExportUtil/JSONDumper.h"
+#include "ExportUtil/JSONSceneDumper.h"
 #include "ExportUtil/Config.h"
 #include "ExportModel/ModelExporter.h"
 
@@ -62,9 +62,11 @@ main(int argc, const char** argv) {
             }
         }
         if (args.HasArg("-dump")) {
-            std::string json = JSONDumper::Dump(modelExporter.GetScene(), inPath);
+            std::string json = JSONSceneDumper::Dump(modelExporter.GetScene(), inPath);
             Log::Info(json.c_str());
         }
+        
+
         return 0;
     }
     else {

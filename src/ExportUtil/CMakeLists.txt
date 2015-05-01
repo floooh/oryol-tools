@@ -2,11 +2,14 @@ fips_begin_lib(ExportUtil)
     fips_files(
         Log.cc Log.h
         CmdLineArgs.cc CmdLineArgs.h
-        JSONDumper.cc JSONDumper.h
+        JSONSceneDumper.cc JSONSceneDumper.h
+        JSONMeshDumper.cc JSONMeshDumper.h
         Config.cc Config.h
         Vertex.h
-        IndexBuffer.h IndexBuffer.cc
-        VertexWriter.h VertexWriter.cc
-        VertexBuffer.h VertexBuffer.cc
+        IndexBuffer.cc IndexBuffer.h
+        VertexWriter.cc VertexWriter.h
+        VertexBuffer.cc VertexBuffer.h
+        Mesh.h
+        PrimitiveGroup.h
     )
 fips_end_lib(ExportUtil)

@@ -12,7 +12,7 @@ struct cJSON;
 
 namespace OryolTools {
 
-class JSONDumper {
+class JSONSceneDumper {
 public:
     /// dump aiScene to string
     static std::string Dump(const aiScene* scene, const std::string& srcFilePath);

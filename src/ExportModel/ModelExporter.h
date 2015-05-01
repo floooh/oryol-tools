@@ -6,14 +6,14 @@
 */
 #include <string>
 #include "assimp/Importer.hpp"
-#include "ExportUtil/Vertex.h"
-#include "ExportUtil/VertexBuffer.h"
-#include "ExportUtil/IndexBuffer.h"
+#include "ExportUtil/Mesh.h"
 
 namespace OryolTools {
 
 class ModelExporter {
 public:
+    /// destructor
+    ~ModelExporter();
     /// set aiProcess scene processing flags
     void SetAiProcessFlags(unsigned int flags);
     /// set component removal flags (PP_RVC_FLAGS)
@@ -28,6 +28,8 @@ public:
     bool Import(const std::string& path);
     /// export converted import data
     bool Export(const std::string& path);
+    /// discard content
+    void DiscardContent();
     /// get pointer to imported scene
     const aiScene* GetScene() const;
 
@@ -36,6 +38,8 @@ private:
     bool exportVertices();
     /// convert index data into embedded IndexBuffer object
     bool exportIndices();
+    /// export primitive groups into mesh object
+    bool exportPrimGroups();
 
     Assimp::Importer importer;
     const aiScene* scene = nullptr;
@@ -44,8 +48,7 @@ private:
     unsigned int aiProcessSortByPTypeRemoveFlags = 0;
     int indexSize = 2;
     VertexLayout requestedVertexLayout;
-    VertexBuffer vertexBuffer;
-    IndexBuffer indexBuffer;
+    Mesh mesh;
 };
 
 } // namespace OryolTools

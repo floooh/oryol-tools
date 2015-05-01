@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 //  JSONDumper.cc
 //------------------------------------------------------------------------------
-#include "JSONDumper.h"
+#include "JSONSceneDumper.h"
 #include "assimp/scene.h"
 #include "cJSON.h"
 #include <cassert>
@@ -11,7 +11,7 @@ namespace OryolTools {
 
 //------------------------------------------------------------------------------
 std::string
-JSONDumper::Dump(const aiScene* scene, const std::string& srcFilePath) {
+JSONSceneDumper::Dump(const aiScene* scene, const std::string& srcFilePath) {
     assert(scene);
 
     cJSON* jsonRoot = cJSON_CreateObject();
@@ -29,7 +29,7 @@ JSONDumper::Dump(const aiScene* scene, const std::string& srcFilePath) {
 
 //------------------------------------------------------------------------------
 void
-JSONDumper::dumpGlobal(cJSON* jsonNode, const aiScene* scene, const std::string& srcFilePath) {
+JSONSceneDumper::dumpGlobal(cJSON* jsonNode, const aiScene* scene, const std::string& srcFilePath) {
     cJSON_AddItemToObject(jsonNode, "path", cJSON_CreateString(srcFilePath.c_str()));
     cJSON* jsonFlags = cJSON_CreateArray();
     cJSON_AddItemToObject(jsonNode, "flags", jsonFlags);
@@ -53,7 +53,7 @@ JSONDumper::dumpGlobal(cJSON* jsonNode, const aiScene* scene, const std::string&
 
 //------------------------------------------------------------------------------
 void
-JSONDumper::dumpMeshes(cJSON* jsonNode, const aiScene* scene) {
+JSONSceneDumper::dumpMeshes(cJSON* jsonNode, const aiScene* scene) {
     cJSON* jsonMeshes = cJSON_CreateArray();
     cJSON_AddItemToObject(jsonNode, "meshes", jsonMeshes);
     for (unsigned int meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++) {
@@ -86,7 +86,7 @@ JSONDumper::dumpMeshes(cJSON* jsonNode, const aiScene* scene) {
 
 //------------------------------------------------------------------------------
 void
-JSONDumper::dumpMaterials(cJSON* jsonNode, const aiScene* scene) {
+JSONSceneDumper::dumpMaterials(cJSON* jsonNode, const aiScene* scene) {
     cJSON* jsonMaterials = cJSON_CreateArray();
     cJSON_AddItemToObject(jsonNode, "materials", jsonMaterials);
     for (unsigned int matIndex = 0; matIndex < scene->mNumMaterials; matIndex++) {
@@ -107,7 +107,7 @@ JSONDumper::dumpMaterials(cJSON* jsonNode, const aiScene* scene) {
 
 //------------------------------------------------------------------------------
 void
-JSONDumper::dumpNodes(cJSON* jsonNode, const aiScene* scene, const aiNode* node) {
+JSONSceneDumper::dumpNodes(cJSON* jsonNode, const aiScene* scene, const aiNode* node) {
 
     // root node?
     if (nullptr == node) {
