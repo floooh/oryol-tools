@@ -149,6 +149,18 @@ Config::GetAiProcessSortByPTypeRemoveFlags() const {
 }
 
 //------------------------------------------------------------------------------
+int
+Config::GetIndexSize() const {
+    if (this->config.contains("IndexSize")) {
+        return this->config.get("IndexSize")->as<int64_t>()->get();
+    }
+    else {
+        Log::Warn("no IndexSize in config, using 2 (for 16-bit indices)!\n");
+        return 2;
+    }
+}
+
+//------------------------------------------------------------------------------
 VertexLayout
 Config::GetLayout() const {
     if (this->config.contains("Layout")) {
@@ -160,7 +172,7 @@ Config::GetLayout() const {
                 auto attr = layout->get(attrName)->as_table();
                 if (attr->contains("format")) {
                     auto format = attr->get("format");
-                    result.Components[attrIndex].format = VertexFormat::FromString(format->as<std::string>()->get());
+                    result.Components[attrIndex].Format = VertexFormat::FromString(format->as<std::string>()->get());
                 }
                 if (attr->contains("scale")) {
                     auto scale = attr->get("scale");
@@ -171,7 +183,7 @@ Config::GetLayout() const {
                     else if (scale->as<int64_t>()) {
                         scaleValue = scale->as<int64_t>()->get();
                     }
-                    result.Components[attrIndex].scale = scaleValue;
+                    result.Components[attrIndex].Scale = scaleValue;
                 }
                 if (attr->contains("bias")) {
                     auto bias = attr->get("bias");
@@ -182,7 +194,7 @@ Config::GetLayout() const {
                     else if (bias->as<int64_t>()) {
                         biasValue = bias->as<int64_t>()->get();
                     }
-                    result.Components[attrIndex].bias = biasValue;
+                    result.Components[attrIndex].Bias = biasValue;
                 }
             }
         }

@@ -98,7 +98,8 @@ public:
         };
         assert(c < NumVertexFormats);
         return names[c];
-    };
+    }
+    /// convert from string
     static Code FromString(const std::string& str) {
         for (int i = 0; i < NumVertexFormats; i++) {
             if (ToString((Code)i) == str) {
@@ -106,6 +107,25 @@ public:
             }
         }
         return InvalidVertexFormat;
+    }
+    /// get byte size
+    static int ByteSize(VertexFormat::Code c) {
+        static const int sizes[NumVertexFormats] = {
+            4,      // Float
+            8,      // Float2
+            12,     // Float3
+            16,     // Float4
+            4,      // Byte4
+            4,      // Byte4N
+            4,      // UByte4
+            4,      // UByte4N
+            4,      // Short2
+            4,      // Short2N
+            8,      // Short4
+            8,      // Short4N
+        };
+        assert((c >= 0) && (c < NumVertexFormats));
+        return sizes[c];
     }
 };
 
@@ -117,10 +137,43 @@ public:
 class VertexLayout {
 public:
     struct Component {
-        VertexFormat::Code format = VertexFormat::InvalidVertexFormat;
-        float scale = 1.0f;
-        float bias = 0.0f;
+        VertexFormat::Code Format = VertexFormat::InvalidVertexFormat;
+        float Scale = 1.0f;
+        float Bias = 0.0f;
     } Components[VertexAttr::NumVertexAttrs];
+
+    /// test if the vertex layout has a vertex attribute
+    bool HasAttr(VertexAttr::Code c) const {
+        assert((c >= 0) && (c < VertexAttr::NumVertexAttrs));
+        return this->Components[c].Format != VertexFormat::InvalidVertexFormat;
+    }
+
+    /// compute byte size
+    int ByteSize() const {
+        int size = 0;
+        for (const auto& c : this->Components) {
+            if (c.Format != VertexFormat::InvalidVertexFormat) {
+                size += VertexFormat::ByteSize(c.Format);
+            }
+        }
+        return size;
+    }
+
+    /// get byte-offset of attr
+    int Offset(VertexAttr::Code attr) const {
+        int offset = 0;
+        for (int i = 0; i < VertexAttr::NumVertexAttrs; i++) {
+            if (i < attr) {
+                if (this->Components[i].Format != VertexFormat::InvalidVertexFormat) {
+                    offset += VertexFormat::ByteSize(this->Components[i].Format);
+                }
+            }
+            else {
+                break;
+            }
+        }
+        return offset;
+    }
 };
 
 } // namespace OryolTools

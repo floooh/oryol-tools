@@ -51,8 +51,15 @@ main(int argc, const char** argv) {
         modelExporter.SetAiProcessFlags(config.GetAiProcessFlags());
         modelExporter.SetAiProcessSortByPTypeRemoveFlags(config.GetAiProcessSortByPTypeRemoveFlags());
         modelExporter.SetVertexLayout(config.GetLayout());
+        modelExporter.SetIndexSize(config.GetIndexSize());
         if (!modelExporter.Import(inPath)) {
             return 10;
+        }
+        if (args.HasArg("-out")) {
+            std::string outPath = args.GetString("-out");
+            if (!modelExporter.Export(outPath)) {
+                return 10;
+            }
         }
         if (args.HasArg("-dump")) {
             std::string json = JSONDumper::Dump(modelExporter.GetScene(), inPath);

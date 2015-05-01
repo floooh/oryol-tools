@@ -20,6 +20,8 @@ public:
     unsigned int GetAiProcessRemoveComponentsFlags() const;
     /// get the remove primitive type flag mast (PP_SBP_REMOVE)
     unsigned int GetAiProcessSortByPTypeRemoveFlags() const;
+    /// get requested index size (2 or 4)
+    int GetIndexSize() const;
     /// get the vertex layout
     VertexLayout GetLayout() const;
 

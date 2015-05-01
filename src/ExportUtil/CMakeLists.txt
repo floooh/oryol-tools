@@ -5,5 +5,8 @@ fips_begin_lib(ExportUtil)
         JSONDumper.cc JSONDumper.h
         Config.cc Config.h
         Vertex.h
+        IndexBuffer.h IndexBuffer.cc
+        VertexWriter.h VertexWriter.cc
+        VertexBuffer.h VertexBuffer.cc
     )
 fips_end_lib(ExportUtil)
