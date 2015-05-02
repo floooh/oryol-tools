@@ -148,6 +148,17 @@ public:
         return this->Components[c].Format != VertexFormat::InvalidVertexFormat;
     }
 
+    /// get number of valid vertex components
+    int NumValidComponents() const {
+        int num = 0;
+        for (const auto& c : this->Components) {
+            if (c.Format != VertexFormat::InvalidVertexFormat) {
+                num++;
+            }
+        }
+        return num;
+    }
+
     /// compute byte size
     int ByteSize() const {
         int size = 0;

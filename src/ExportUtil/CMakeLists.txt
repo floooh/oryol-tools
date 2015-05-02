@@ -11,5 +11,6 @@ fips_begin_lib(ExportUtil)
         VertexBuffer.cc VertexBuffer.h
         Mesh.h
         PrimitiveGroup.h
+        MeshSaver.h MeshSaver.cc
     )
 fips_end_lib(ExportUtil)

@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------
 #include "ModelExporter.h"
 #include "ExportUtil/Log.h"
+#include "ExportUtil/MeshSaver.h"
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
@@ -53,7 +54,7 @@ ModelExporter::SetVertexLayout(const VertexLayout& layout) {
 
 //------------------------------------------------------------------------------
 bool
-ModelExporter::Import(const std::string& path) {
+ModelExporter::ImportScene(const std::string& path) {
     assert(!path.empty());
 
     this->importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, this->aiProcessRemoveComponentsFlags);
@@ -64,12 +65,13 @@ ModelExporter::Import(const std::string& path) {
         Log::Warn("Failed to import file '%s': %s\n", path.c_str(), importer.GetErrorString());
         return false;
     }
+    Log::Info("Imported file '%s'\n", path.c_str());
     return true;
 }
 
 //------------------------------------------------------------------------------
 bool
-ModelExporter::Export(const std::string& path) {
+ModelExporter::ExportMesh(const std::string& path) {
     assert(!path.empty());
     assert(!this->mesh.VertexBuffer.IsValid());
     assert(!this->mesh.IndexBuffer.IsValid());
@@ -79,7 +81,29 @@ ModelExporter::Export(const std::string& path) {
     this->exportIndices();
     this->exportPrimGroups();
 
-    return true;
+    FILE* fp = fopen(path.c_str(), "wb");
+    if (fp) {
+        size_t size = MeshSaver::Save(this->mesh, fp);
+        fclose(fp);
+        Log::Info("Exported mesh to '%s' (%d bytes)\n", path.c_str(), size);
+        return true;
+    }
+    else {
+        Log::Fatal("Failed to open file '%s'\n", path.c_str());
+        return false;
+    }
+}
+
+//------------------------------------------------------------------------------
+bool
+ModelExporter::ExportModel(const std::string& path) {
+    assert(!path.empty());
+    assert(!this->mesh.VertexBuffer.IsValid());
+    assert(!this->mesh.IndexBuffer.IsValid());
+    assert(this->mesh.PrimGroups.empty());
+
+    // FIXME!
+    return false;
 }
 
 //------------------------------------------------------------------------------
@@ -192,10 +216,10 @@ ModelExporter::exportIndices() {
 
     // export indices
     int baseVertexIndex = 0;
+    int startIndex = 0;
     this->mesh.IndexBuffer.Setup(this->indexSize, allNumIndices);
     for (unsigned int meshIndex = 0; meshIndex < this->scene->mNumMeshes; meshIndex++) {
         const aiMesh* curMesh = this->scene->mMeshes[meshIndex];
-        int startIndex = 0;
         for (unsigned int faceIndex = 0; faceIndex < curMesh->mNumFaces; faceIndex++) {
             const aiFace& curFace = curMesh->mFaces[faceIndex];
             assert(curFace.mIndices);
@@ -233,6 +257,12 @@ const aiScene*
 ModelExporter::GetScene() const {
     assert(this->scene);
     return this->scene;
+}
+
+//------------------------------------------------------------------------------
+const Mesh&
+ModelExporter::GetMesh() const {
+    return this->mesh;
 }
 
 } // namespace OryolTools

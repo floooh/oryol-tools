@@ -4,6 +4,7 @@
 #include "ExportUtil/CmdLineArgs.h"
 #include "ExportUtil/Log.h"
 #include "ExportUtil/JSONSceneDumper.h"
+#include "ExportUtil/JSONMeshDumper.h"
 #include "ExportUtil/Config.h"
 #include "ExportModel/ModelExporter.h"
 
@@ -16,8 +17,9 @@ main(int argc, const char** argv) {
     args.AddBool("-help", "show help");
     args.AddString("-model", "path to input model file", "");
     args.AddString("-config", "path to TOML config file", "");
-    args.AddString("-out", "path to output file", "");
-    args.AddBool("-dump", "dump scene structure as JSON to stdout");
+    args.AddString("-out", "path to output file (.omdl or .omsh extension)", "");
+    args.AddBool("-dump-scene", "dump input scene structure as JSON to stdout");
+    args.AddBool("-dump-mesh", "dump the exported mesh as JSON to stdout");
     if (!args.Parse(argc, argv)) {
         Log::Warn("Failed to parse args\n");
         return 10;
@@ -52,21 +54,38 @@ main(int argc, const char** argv) {
         modelExporter.SetAiProcessSortByPTypeRemoveFlags(config.GetAiProcessSortByPTypeRemoveFlags());
         modelExporter.SetVertexLayout(config.GetLayout());
         modelExporter.SetIndexSize(config.GetIndexSize());
-        if (!modelExporter.Import(inPath)) {
+        if (!modelExporter.ImportScene(inPath)) {
             return 10;
         }
         if (args.HasArg("-out")) {
             std::string outPath = args.GetString("-out");
-            if (!modelExporter.Export(outPath)) {
-                return 10;
+            std::string outExt;
+            size_t dotIndex = std::string::npos;
+            if ((dotIndex = outPath.find_last_of(".")) != std::string::npos) {
+                outExt = outPath.substr(dotIndex);
+            }
+            if (outExt == ".omsh") {
+                if (!modelExporter.ExportMesh(outPath)) {
+                    return 10;
+                }
+            }
+            else if (outExt == ".omdl") {
+                if (!modelExporter.ExportModel(outPath)) {
+                    return 10;
+                }
+            }
+            else {
+                Log::Fatal("unknown file extension in -out path (must be .omdl or .omsh): %s\n", outPath.c_str());
             }
         }
-        if (args.HasArg("-dump")) {
+        if (args.HasArg("-dump-scene")) {
             std::string json = JSONSceneDumper::Dump(modelExporter.GetScene(), inPath);
             Log::Info(json.c_str());
         }
-        
-
+        if (args.HasArg("-dump-mesh")) {
+            std::string json = JSONMeshDumper::Dump(modelExporter.GetMesh());
+            Log::Info(json.c_str());
+        }
         return 0;
     }
     else {

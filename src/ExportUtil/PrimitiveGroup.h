@@ -8,17 +8,34 @@ namespace OryolTools {
 
 class PrimitiveGroup {
 public:
-    enum {
+    enum TypeT {
         Points = 0,
-        Lines = 1,
-        LineLoop = 2,
-        LineStrip = 3,
-        Triangles = 4,
-        TriangleStrip = 5,
-        TriangleFan = 6
+        Lines,
+        LineLoop,
+        LineStrip,
+        Triangles,
+        TriangleStrip,
+        TriangleFan,
+
+        NumTypes,
+        InvalidType,
     } Type = Triangles;
     int BaseElement = 0;
     int NumElements = 0;
+
+    static std::string TypeToString(TypeT t) {
+        static const std::string types[NumTypes] = {
+            "Points",
+            "Lines",
+            "LineLoop",
+            "LineStrip",
+            "Triangles",
+            "TriangleStrip",
+            "TriangleFan",
+        };
+        assert(t < NumTypes);
+        return types[t];
+    };
 };
 
 } // namespace OryolTools

@@ -25,13 +25,17 @@ public:
     /// set vertex layout description
     void SetVertexLayout(const VertexLayout& layout);
     /// import data
-    bool Import(const std::string& path);
-    /// export converted import data
-    bool Export(const std::string& path);
+    bool ImportScene(const std::string& path);
+    /// export converted import data as complete model
+    bool ExportModel(const std::string& path);
+    /// export converted import data as mesh-only
+    bool ExportMesh(const std::string& path);
     /// discard content
     void DiscardContent();
     /// get pointer to imported scene
     const aiScene* GetScene() const;
+    /// get exported mesh
+    const Mesh& GetMesh() const;
 
 private:
     /// convert vertex data into embedded VertexBuffer object
