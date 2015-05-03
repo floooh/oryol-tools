@@ -8,14 +8,21 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 #include <cassert>
+#include <cfloat>
+
+using namespace std;
 
 namespace OryolTools {
 
 //------------------------------------------------------------------------------
 ModelExporter::~ModelExporter() {
     this->scene = 0;
-    this->mesh.VertexBuffer.Discard();
-    this->mesh.IndexBuffer.Discard();
+    if (this->mesh.VertexBuffer.IsValid()) {
+        this->mesh.VertexBuffer.Discard();
+    }
+    if (this->mesh.IndexBuffer.IsValid()) {
+        this->mesh.IndexBuffer.Discard();
+    }
     this->mesh.PrimGroups.clear();
 }
 
@@ -104,6 +111,37 @@ ModelExporter::ExportModel(const std::string& path) {
 
     // FIXME!
     return false;
+}
+
+//------------------------------------------------------------------------------
+void
+ModelExporter::ComputeBoundingBox() {
+    this->boxMin = glm::vec3(FLT_MAX);
+    this->boxMax = glm::vec3(-FLT_MAX);
+    for (unsigned int meshIndex = 0; meshIndex < this->scene->mNumMeshes; meshIndex++) {
+        const aiMesh* curMesh = this->scene->mMeshes[meshIndex];
+        for (unsigned int vertIndex = 0; vertIndex < curMesh->mNumVertices; vertIndex++) {
+            const aiVector3D& pos = curMesh->mVertices[vertIndex];
+            if (pos.x < this->boxMin.x) this->boxMin.x = pos.x;
+            if (pos.y < this->boxMin.y) this->boxMin.y = pos.y;
+            if (pos.z < this->boxMin.z) this->boxMin.z = pos.z;
+            if (pos.x > this->boxMax.x) this->boxMax.x = pos.x;
+            if (pos.y > this->boxMax.y) this->boxMax.y = pos.y;
+            if (pos.z > this->boxMax.z) this->boxMax.z = pos.z;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+const glm::vec3&
+ModelExporter::GetBoundingBoxMin() const {
+    return this->boxMin;
+}
+
+//------------------------------------------------------------------------------
+const glm::vec3&
+ModelExporter::GetBoundingBoxMax() const {
+    return this->boxMax;
 }
 
 //------------------------------------------------------------------------------

@@ -118,6 +118,32 @@ JSONSceneDumper::dumpNodes(cJSON* jsonNode, const aiScene* scene, const aiNode* 
     }
 
     cJSON_AddItemToObject(jsonNode, "name", cJSON_CreateString(node->mName.C_Str()));
+    cJSON* jsonMeshes = cJSON_CreateArray();
+    cJSON_AddItemToObject(jsonNode, "meshes", jsonMeshes);
+    for (unsigned int meshIndex = 0; meshIndex < node->mNumMeshes; meshIndex++) {
+        cJSON_AddItemToArray(jsonMeshes, cJSON_CreateNumber(node->mMeshes[meshIndex]));
+    }
+
+    aiVector3D scaling, position;
+    aiQuaternion rotation;
+    node->mTransformation.Decompose(scaling, rotation, position);
+    cJSON* jsonPos = cJSON_CreateArray();
+    cJSON_AddItemToObject(jsonNode, "position", jsonPos);
+    cJSON_AddItemToArray(jsonPos, cJSON_CreateNumber(position.x));
+    cJSON_AddItemToArray(jsonPos, cJSON_CreateNumber(position.y));
+    cJSON_AddItemToArray(jsonPos, cJSON_CreateNumber(position.z));
+    cJSON* jsonRot = cJSON_CreateArray();
+    cJSON_AddItemToObject(jsonNode, "rotation", jsonRot);
+    cJSON_AddItemToArray(jsonRot, cJSON_CreateNumber(rotation.x));
+    cJSON_AddItemToArray(jsonRot, cJSON_CreateNumber(rotation.y));
+    cJSON_AddItemToArray(jsonRot, cJSON_CreateNumber(rotation.z));
+    cJSON_AddItemToArray(jsonRot, cJSON_CreateNumber(rotation.w));
+    cJSON* jsonScale = cJSON_CreateArray();
+    cJSON_AddItemToObject(jsonNode, "scale", jsonScale);
+    cJSON_AddItemToArray(jsonScale, cJSON_CreateNumber(scaling.x));
+    cJSON_AddItemToArray(jsonScale, cJSON_CreateNumber(scaling.y));
+    cJSON_AddItemToArray(jsonScale, cJSON_CreateNumber(scaling.z));
+
     if (node->mNumChildren > 0) {
         cJSON* jsonChildArray = cJSON_CreateArray();
         cJSON_AddItemToObject(jsonNode, "nodes", jsonChildArray);

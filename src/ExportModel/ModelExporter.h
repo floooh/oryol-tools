@@ -7,6 +7,7 @@
 #include <string>
 #include "assimp/Importer.hpp"
 #include "ExportUtil/Mesh.h"
+#include "glm/vec3.hpp"
 
 namespace OryolTools {
 
@@ -36,6 +37,12 @@ public:
     const aiScene* GetScene() const;
     /// get exported mesh
     const Mesh& GetMesh() const;
+    /// compute bounding box of loaded geometry
+    void ComputeBoundingBox();
+    /// get bounding box min
+    const glm::vec3& GetBoundingBoxMin() const;
+    /// get bounding box max
+    const glm::vec3& GetBoundingBoxMax() const;
 
 private:
     /// convert vertex data into embedded VertexBuffer object
@@ -53,6 +60,8 @@ private:
     int indexSize = 2;
     VertexLayout requestedVertexLayout;
     Mesh mesh;
+    glm::vec3 boxMin;
+    glm::vec3 boxMax;
 };
 
 } // namespace OryolTools
