@@ -39,8 +39,10 @@ aiProcess = [
     "FindDegenerates",
     "FindInvalidData",
     "GenUVCoords",
-    "OptimizeGraph",
-    "OptimizeMeshes"
+    "PreTransformVertices",
+    "FlipWindingOrder"
+#    "OptimizeGraph",
+#    "OptimizeMeshes"
 ]
 
 #-------------------------------------------------------------------------------
@@ -91,7 +93,6 @@ PP_SBP_REMOVE = [
 [Layout]
     [Layout.Position]
         format = "Float3"
-        scale = 0.01
     [Layout.Normal]
         format = "Byte4N"
     [Layout.TexCoord0]
