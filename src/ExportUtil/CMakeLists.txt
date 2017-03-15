@@ -13,4 +13,5 @@ fips_begin_lib(ExportUtil)
         PrimitiveGroup.h
         MeshSaver.h MeshSaver.cc
     )
+    fips_deps(cjson)
 fips_end_lib(ExportUtil)

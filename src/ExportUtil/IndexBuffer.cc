@@ -3,7 +3,8 @@
 //------------------------------------------------------------------------------
 #include "IndexBuffer.h"
 #include "ExportUtil/Log.h"
-#include <cassert>
+#include <assert.h>
+#include <stdlib.h>
 
 using namespace std;
 

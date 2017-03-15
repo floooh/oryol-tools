@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------
 #include "Log.h"
 #include <stdarg.h>
+#include <stdlib.h>
 
 namespace OryolTools {
 
