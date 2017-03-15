@@ -3,8 +3,6 @@
 #
 ---
 imports:
-    drahtgitter: 
-        git: https://github.com/floooh/drahtgitter.git
     fips-assimp:
         git: https://github.com/floooh/fips-assimp.git
     fips-cpptoml:
