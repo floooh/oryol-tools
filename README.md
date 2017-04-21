@@ -1,4 +1,4 @@
 # oryol-tools
-Asset exporter tools for Oryol engine
 
-Oryol: https://github.com/floooh/oryol
+Various cmdline tools for Oryol (https://github.com/floooh/oryol)
+

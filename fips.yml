@@ -11,3 +11,5 @@ imports:
         git: https://github.com/floooh/fips-cjson.git
     fips-glm:
         git: https://github.com/floooh/fips-glm.git
+    fips-spirvcross:
+        git: https://github.com/floooh/fips-spirvcross.git
