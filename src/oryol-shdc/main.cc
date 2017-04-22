@@ -41,13 +41,44 @@ void write_source_file(const string& path, const string& content) {
 }
 
 //------------------------------------------------------------------------------
+void extract_resource_info(Compiler* compiler) {
+    switch (compiler->get_execution_model()) {
+        case ExecutionModelVertex:      Log::Info("type: vertex shader\n"); break;
+        case ExecutionModelFragment:    Log::Info("type: fragment shader\n"); break;
+        default: Log::Info("unsupported shader type\n"); 
+    }
+    ShaderResources res = compiler->get_shader_resources();
+    for (const auto& ub : res.uniform_buffers) {
+        Log::Info("uniform_buffer: %s\n", ub.name.c_str());
+        const SPIRType& type = compiler->get_type(ub.base_type_id);
+        for (int member_index = 0; member_index < type.member_types.size(); member_index++) {
+            string member_name = compiler->get_member_name(ub.base_type_id, member_index);
+            Log::Info("    %s\n", member_name.c_str());
+        }
+    }   
+    for (const auto& img : res.sampled_images) {
+        Log::Info("sampled_image: %s\n", img.name.c_str());
+    }
+    for (const auto& input : res.stage_inputs) {
+        Log::Info("input: %s\n", input.name.c_str());
+    } 
+    for (const auto& output : res.stage_outputs) {
+        Log::Info("output: %s\n", output.name.c_str());
+    }
+    for (const auto& storage_image : res.storage_images) {
+        Log::Info("storage_image: %s\n", storage_image.name.c_str());
+    }
+}
+
+//------------------------------------------------------------------------------
 void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
-    auto compiler = unique_ptr<CompilerGLSL>(new CompilerGLSL(spirv));
-    auto opts = compiler->get_options();
+    CompilerGLSL compiler(spirv);
+    extract_resource_info(&compiler);
+    auto opts = compiler.get_options();
     opts.version = 100;
     opts.es = true;
-    compiler->set_options(opts);
-    string src = compiler->compile();
+    compiler.set_options(opts);
+    string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
     }
@@ -58,12 +89,12 @@ void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
 
 //------------------------------------------------------------------------------
 void to_glsl_120(const vector<uint32_t>& spirv, const string& base_path) {
-    auto compiler = unique_ptr<CompilerGLSL>(new CompilerGLSL(spirv));
-    auto opts = compiler->get_options();
+    CompilerGLSL compiler(spirv);
+    auto opts = compiler.get_options();
     opts.version = 120;
     opts.es = false;
-    compiler->set_options(opts);
-    string src = compiler->compile();
+    compiler.set_options(opts);
+    string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v120 source for '%s'!\n", base_path.c_str());
     }
@@ -74,12 +105,12 @@ void to_glsl_120(const vector<uint32_t>& spirv, const string& base_path) {
 
 //------------------------------------------------------------------------------
 void to_glsl_es3(const vector<uint32_t>& spirv, const string& base_path) {
-    auto compiler = unique_ptr<CompilerGLSL>(new CompilerGLSL(spirv));
-    auto opts = compiler->get_options();
+    CompilerGLSL compiler(spirv);
+    auto opts = compiler.get_options();
     opts.version = 300;
     opts.es = true;
-    compiler->set_options(opts);
-    string src = compiler->compile();
+    compiler.set_options(opts);
+    string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL es3 source for '%s'!\n", base_path.c_str());
     }
@@ -90,13 +121,12 @@ void to_glsl_es3(const vector<uint32_t>& spirv, const string& base_path) {
 
 //------------------------------------------------------------------------------
 void to_glsl_330(const vector<uint32_t>& spirv, const string& base_path) {
-    string dst_path = base_path + ".glsl330.glsl";
-    auto compiler = unique_ptr<CompilerGLSL>(new CompilerGLSL(spirv));
-    auto opts = compiler->get_options();
+    CompilerGLSL compiler(spirv);
+    auto opts = compiler.get_options();
     opts.version = 330;
     opts.es = false;
-    compiler->set_options(opts);
-    string src = compiler->compile();
+    compiler.set_options(opts);
+    string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v330 source for '%s'!\n", base_path.c_str());
     }
@@ -107,12 +137,11 @@ void to_glsl_330(const vector<uint32_t>& spirv, const string& base_path) {
 
 //------------------------------------------------------------------------------
 void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
-    string dst_path = base_path + ".hlsl";
-    auto compiler = unique_ptr<CompilerHLSL>(new CompilerHLSL(spirv));
-    auto opts = compiler->get_options();
+    CompilerHLSL compiler(spirv);
+    auto opts = compiler.get_options();
     opts.shader_model = 50;
-    compiler->set_options(opts);
-    string src = compiler->compile();
+    compiler.set_options(opts);
+    string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile HLSL5 source for '%s'!\n", base_path.c_str());
     }
@@ -123,9 +152,8 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
 
 //------------------------------------------------------------------------------
 void to_mlsl(const vector<uint32_t>& spirv, const string& base_path) {
-    string dst_path = base_path + ".metal";
-    auto compiler = unique_ptr<CompilerMSL>(new CompilerMSL(spirv));
-    string src = compiler->compile();
+    CompilerMSL compiler(spirv);
+    string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile MetalSL source for '%s'!\n", base_path.c_str());
     }
