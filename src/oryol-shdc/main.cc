@@ -6,6 +6,7 @@
 #include "spirv_hlsl.hpp"
 #include "spirv_msl.hpp"
 #include "pystring.h"
+#include "cJSON.h"
 #include <stdio.h>
 
 using namespace OryolTools;
@@ -71,7 +72,8 @@ const char* type_to_oryol_uniform_type(const SPIRType& type) {
     else if (type.basetype == SPIRType::Boolean) {
         return "UniformType::Bool";
     }
-    return "UniformType::InvalidUniformType";
+    Log::Fatal("Invalid member type in uniform block! (expected: float, vec2, vec3, vec4, mat2, mat3, mat4)\n");
+    return nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -84,60 +86,104 @@ const char* type_to_oryol_vertex_format(const SPIRType& type) {
             case 4: return "VertexFormat::Float4";
         }
     }
-    return "VertexFormat::InvalidVertexFormat";
+    Log::Fatal("Invalid vertex attribute type! (expected: float, vec2, vec3, vec4)\n");
+    return nullptr;
 }
 
 //------------------------------------------------------------------------------
-void extract_resource_info(Compiler* compiler) {
+cJSON* extract_resource_info(Compiler* compiler) {
+    cJSON* root = cJSON_CreateObject();
+
+    // shader stage
+    const char* stage_str = nullptr;
     switch (compiler->get_execution_model()) {
-        case ExecutionModelVertex:      Log::Info("type: vertex shader\n"); break;
-        case ExecutionModelFragment:    Log::Info("type: fragment shader\n"); break;
-        default: Log::Info("unsupported shader type\n"); 
+        case ExecutionModelVertex: stage_str = "ShaderStage::VS"; break;
+        case ExecutionModelFragment: stage_str = "ShaderStage::FS"; break;
+        default: break;
     }
+    if (stage_str) {
+        cJSON_AddItemToObject(root, "stage", cJSON_CreateString(stage_str));
+    }
+    else {
+        Log::Fatal("only vertex- or fragment-shaders allowed!\n");
+    }
+
+    // uniform blocks
     ShaderResources res = compiler->get_shader_resources();
-    for (const auto& ub : res.uniform_buffers) {
-        string ub_name = compiler->get_name(ub.id);
-        Log::Info("uniform_buffer: type=%s, name=%s\n", ub.name.c_str(), ub_name.c_str());
-        const SPIRType& type = compiler->get_type(ub.base_type_id);
-        for (int m_index = 0; m_index < int(type.member_types.size()); m_index++) {
-            string m_name = compiler->get_member_name(ub.base_type_id, m_index);
-            const SPIRType& m_type = compiler->get_type(type.member_types[m_index]);
-            const char* m_type_str = type_to_oryol_uniform_type(m_type);
-            if (m_type.array.size() > 0) {
-                Log::Info("    %s %s[%d]", m_type_str, m_name.c_str(), m_type.array[0]);
+    if (res.uniform_buffers.size() > 0) {
+        cJSON* ub_array = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "uniform_blocks", ub_array);
+        for (const Resource& ub_res : res.uniform_buffers) {
+            const SPIRType& ub_type = compiler->get_type(ub_res.base_type_id);
+            cJSON* ub = cJSON_CreateObject();
+            cJSON_AddItemToArray(ub_array, ub);
+            cJSON_AddItemToObject(ub, "type", cJSON_CreateString(ub_res.name.c_str()));
+            cJSON_AddItemToObject(ub, "name", cJSON_CreateString(compiler->get_name(ub_res.id).c_str()));
+            cJSON* ub_members = cJSON_CreateArray();
+            cJSON_AddItemToObject(ub, "members", ub_members);
+            for (int m_index = 0; m_index < int(ub_type.member_types.size()); m_index++) {
+                cJSON* ub_member = cJSON_CreateObject();
+                cJSON_AddItemToArray(ub_members, ub_member);
+                string m_name = compiler->get_member_name(ub_res.base_type_id, m_index);
+                const SPIRType& m_type = compiler->get_type(ub_type.member_types[m_index]);
+                const char* m_type_str = type_to_oryol_uniform_type(m_type);
+                cJSON_AddItemToObject(ub_member, "name", cJSON_CreateString(m_name.c_str()));
+                cJSON_AddItemToObject(ub_member, "type", cJSON_CreateString(m_type_str));
+                int dim = 1;
+                if (m_type.array.size() > 0) {
+                    dim = m_type.array[0];
+                }
+                cJSON_AddItemToObject(ub_member, "dim", cJSON_CreateNumber(dim));
+            }
+        }
+    }
+
+    // textures
+    if (res.sampled_images.size() > 0) {
+        cJSON* tex_array = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "textures", tex_array);
+        for (const Resource& img_res : res.sampled_images) {
+            const SPIRType& img_type = compiler->get_type(img_res.type_id);
+            cJSON* tex = cJSON_CreateObject();
+            cJSON_AddItemToArray(tex_array, tex);
+            const char* tex_type_str = nullptr;
+            if (img_type.image.arrayed) {
+                if (img_type.image.dim == Dim2D) {
+                    tex_type_str = "TextureType::TextureArray";
+                }
             }
             else {
-                Log::Info("    %s %s\n", m_type_str, m_name.c_str());
+                switch (img_type.image.dim) {
+                    case Dim2D:     tex_type_str = "TextureType::Texture2D"; break;
+                    case DimCube:   tex_type_str = "TextureType::TextureCube"; break;
+                    case Dim3D:     tex_type_str = "TextureType::Texture3D"; break;
+                    default:        break;
+                }
             }
+            if (!tex_type_str) {
+                Log::Fatal("Invalid texture type! (expected: 2D, Cube, 3D or 2D-array)\n");
+            }
+            cJSON_AddItemToObject(tex, "name", cJSON_CreateString(img_res.name.c_str()));
+            cJSON_AddItemToObject(tex, "type", cJSON_CreateString(tex_type_str));
         }
-    }   
-    for (const auto& img : res.sampled_images) {
-        const SPIRType& type = compiler->get_type(img.type_id);
-        const char* tex_type;
-        switch (type.image.dim) {
-            case Dim2D:
-                tex_type = type.image.arrayed ? "TextureType::TextureArray":"TextureType::Texture2D";
-                break;
-            case DimCube:
-                tex_type = "TextureType::TextureCube";
-                break;
-            case Dim3D:
-                tex_type = "TextureType::Texture3D";
-                break;
-            default:
-                tex_type = "TextureType::InvalidTextureType";
-                break;
-        }
-        Log::Info("sampled_image: %s %s\n", tex_type, img.name.c_str());
     }
+
+    // vertex attributes
     if (compiler->get_execution_model() == ExecutionModelVertex) {
-        for (const auto& input : res.stage_inputs) {
+        cJSON* attr_array = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "inputs", attr_array);
+        for (const Resource& input : res.stage_inputs) {
+            cJSON* attr = cJSON_CreateObject();
+            cJSON_AddItemToArray(attr_array, attr);
             const SPIRType& type = compiler->get_type(input.base_type_id);
-            const char* fmt_str = type_to_oryol_vertex_format(type);
+            const char* attr_type_str = type_to_oryol_vertex_format(type);
             uint32_t loc = compiler->get_decoration(input.id, DecorationLocation);
-            Log::Info("input: slot=%d fmt=%s name=%s\n", loc, fmt_str, input.name.c_str());
+            cJSON_AddItemToObject(attr, "name", cJSON_CreateString(input.name.c_str()));
+            cJSON_AddItemToObject(attr, "type", cJSON_CreateString(attr_type_str));
+            cJSON_AddItemToObject(attr, "slot", cJSON_CreateNumber(loc));
         }
     }
+    return root;
 }
 
 //------------------------------------------------------------------------------
@@ -170,6 +216,18 @@ void fix_vertex_attr_locations(Compiler* compiler) {
 }
 
 //------------------------------------------------------------------------------
+void to_reflection_json(const vector<uint32_t>& spirv, const string& base_path) {
+    CompilerGLSL compiler(spirv);
+    fix_vertex_attr_locations(&compiler);
+    cJSON* json = extract_resource_info(&compiler);
+    char* json_raw_str = cJSON_Print(json);
+    string json_str(json_raw_str);
+    std::free(json_raw_str);
+    cJSON_Delete(json);
+    write_source_file(base_path + ".json", json_str);
+}
+
+//------------------------------------------------------------------------------
 void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
     CompilerGLSL compiler(spirv);
     auto opts = compiler.get_options();
@@ -177,7 +235,6 @@ void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
     opts.es = true;
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
-    extract_resource_info(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
@@ -294,6 +351,7 @@ int main(int argc, const char** argv) {
     // ...translate and write to output files...
     string base_path, ext;
     pystring::os::path::splitext(base_path, ext, spirv_path);
+    to_reflection_json(spirv, base_path);
     to_glsl_100(spirv, base_path);
     to_glsl_120(spirv, base_path);
     to_glsl_es3(spirv, base_path);
