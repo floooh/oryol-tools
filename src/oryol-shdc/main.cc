@@ -75,6 +75,19 @@ const char* type_to_oryol_uniform_type(const SPIRType& type) {
 }
 
 //------------------------------------------------------------------------------
+const char* type_to_oryol_vertex_format(const SPIRType& type) {
+    if (type.basetype == SPIRType::Float && type.columns == 1) {
+        switch (type.vecsize) {
+            case 1: return "VertexFormat::Float";
+            case 2: return "VertexFormat::Float2";
+            case 3: return "VertexFormat::Float3";
+            case 4: return "VertexFormat::Float4";
+        }
+    }
+    return "VertexFormat::InvalidVertexFormat";
+}
+
+//------------------------------------------------------------------------------
 void extract_resource_info(Compiler* compiler) {
     switch (compiler->get_execution_model()) {
         case ExecutionModelVertex:      Log::Info("type: vertex shader\n"); break;
@@ -83,7 +96,8 @@ void extract_resource_info(Compiler* compiler) {
     }
     ShaderResources res = compiler->get_shader_resources();
     for (const auto& ub : res.uniform_buffers) {
-        Log::Info("uniform_buffer: %s\n", ub.name.c_str());
+        string ub_name = compiler->get_name(ub.id);
+        Log::Info("uniform_buffer: type=%s, name=%s\n", ub.name.c_str(), ub_name.c_str());
         const SPIRType& type = compiler->get_type(ub.base_type_id);
         for (int m_index = 0; m_index < int(type.member_types.size()); m_index++) {
             string m_name = compiler->get_member_name(ub.base_type_id, m_index);
@@ -98,27 +112,72 @@ void extract_resource_info(Compiler* compiler) {
         }
     }   
     for (const auto& img : res.sampled_images) {
-        Log::Info("sampled_image: %s\n", img.name.c_str());
+        const SPIRType& type = compiler->get_type(img.type_id);
+        const char* tex_type;
+        switch (type.image.dim) {
+            case Dim2D:
+                tex_type = type.image.arrayed ? "TextureType::TextureArray":"TextureType::Texture2D";
+                break;
+            case DimCube:
+                tex_type = "TextureType::TextureCube";
+                break;
+            case Dim3D:
+                tex_type = "TextureType::Texture3D";
+                break;
+            default:
+                tex_type = "TextureType::InvalidTextureType";
+                break;
+        }
+        Log::Info("sampled_image: %s %s\n", tex_type, img.name.c_str());
     }
-    for (const auto& input : res.stage_inputs) {
-        Log::Info("input: %s\n", input.name.c_str());
-    } 
-    for (const auto& output : res.stage_outputs) {
-        Log::Info("output: %s\n", output.name.c_str());
+    if (compiler->get_execution_model() == ExecutionModelVertex) {
+        for (const auto& input : res.stage_inputs) {
+            const SPIRType& type = compiler->get_type(input.base_type_id);
+            const char* fmt_str = type_to_oryol_vertex_format(type);
+            uint32_t loc = compiler->get_decoration(input.id, DecorationLocation);
+            Log::Info("input: slot=%d fmt=%s name=%s\n", loc, fmt_str, input.name.c_str());
+        }
     }
-    for (const auto& storage_image : res.storage_images) {
-        Log::Info("storage_image: %s\n", storage_image.name.c_str());
+}
+
+//------------------------------------------------------------------------------
+void fix_vertex_attr_locations(Compiler* compiler) {
+    if (compiler->get_execution_model() == ExecutionModelVertex) {
+        ShaderResources res = compiler->get_shader_resources();
+        for (const auto& input : res.stage_inputs) {
+            int loc = -1;
+            if (input.name == "position")       loc = 0;
+            else if (input.name == "normal")    loc = 1;
+            else if (input.name == "texcoord0") loc = 2;
+            else if (input.name == "texcoord1") loc = 3;
+            else if (input.name == "texcoord2") loc = 4;
+            else if (input.name == "texcoord3") loc = 5;
+            else if (input.name == "tangent")   loc = 6;
+            else if (input.name == "binormal")  loc = 7;
+            else if (input.name == "weights")   loc = 8;
+            else if (input.name == "indices")   loc = 9;
+            else if (input.name == "color0")    loc = 10;
+            else if (input.name == "color1")    loc = 11;
+            else if (input.name == "instance0") loc = 12;
+            else if (input.name == "instance1") loc = 13;
+            else if (input.name == "instance2") loc = 14;
+            else if (input.name == "instance3") loc = 15;
+            if (-1 != loc) {
+                compiler->set_decoration(input.id, DecorationLocation, (uint32_t)loc);
+            }
+        }
     }
 }
 
 //------------------------------------------------------------------------------
 void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
     CompilerGLSL compiler(spirv);
-    extract_resource_info(&compiler);
     auto opts = compiler.get_options();
     opts.version = 100;
     opts.es = true;
     compiler.set_options(opts);
+    fix_vertex_attr_locations(&compiler);
+    extract_resource_info(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
@@ -135,6 +194,7 @@ void to_glsl_120(const vector<uint32_t>& spirv, const string& base_path) {
     opts.version = 120;
     opts.es = false;
     compiler.set_options(opts);
+    fix_vertex_attr_locations(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v120 source for '%s'!\n", base_path.c_str());
@@ -151,6 +211,7 @@ void to_glsl_es3(const vector<uint32_t>& spirv, const string& base_path) {
     opts.version = 300;
     opts.es = true;
     compiler.set_options(opts);
+    fix_vertex_attr_locations(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL es3 source for '%s'!\n", base_path.c_str());
@@ -167,6 +228,7 @@ void to_glsl_330(const vector<uint32_t>& spirv, const string& base_path) {
     opts.version = 330;
     opts.es = false;
     compiler.set_options(opts);
+    fix_vertex_attr_locations(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v330 source for '%s'!\n", base_path.c_str());
@@ -182,6 +244,7 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
     auto opts = compiler.get_options();
     opts.shader_model = 50;
     compiler.set_options(opts);
+    fix_vertex_attr_locations(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile HLSL5 source for '%s'!\n", base_path.c_str());
@@ -194,6 +257,7 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
 //------------------------------------------------------------------------------
 void to_mlsl(const vector<uint32_t>& spirv, const string& base_path) {
     CompilerMSL compiler(spirv);
+    fix_vertex_attr_locations(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile MetalSL source for '%s'!\n", base_path.c_str());
@@ -234,8 +298,8 @@ int main(int argc, const char** argv) {
     to_glsl_120(spirv, base_path);
     to_glsl_es3(spirv, base_path);
     to_glsl_330(spirv, base_path);
-    to_hlsl_sm5(spirv, base_path);
-    to_mlsl(spirv, base_path);
+//    to_hlsl_sm5(spirv, base_path);
+//    to_mlsl(spirv, base_path);
 
     return 0;
 }
