@@ -72,7 +72,7 @@ const char* type_to_oryol_uniform_type(const SPIRType& type) {
     else if (type.basetype == SPIRType::Boolean) {
         return "UniformType::Bool";
     }
-    Log::Fatal("Invalid member type in uniform block! (expected: float, vec2, vec3, vec4, mat2, mat3, mat4)\n");
+    Log::Fatal("Invalid member type in uniform block! (expected: float, vec2, vec3, vec4, mat2, mat3, mat4, int, bool)\n");
     return nullptr;
 }
 
