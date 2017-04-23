@@ -41,6 +41,40 @@ void write_source_file(const string& path, const string& content) {
 }
 
 //------------------------------------------------------------------------------
+const char* type_to_oryol_uniform_type(const SPIRType& type) {
+    if (type.basetype == SPIRType::Float) {
+        if (type.columns == 1) {
+            // scalar or vec
+            switch (type.vecsize) {
+                case 1: return "UniformType::Float";
+                case 2: return "UniformType::Vec2";
+                case 3: return "UniformType::Vec3";
+                case 4: return "UniformType::Vec4";
+            }
+        }
+        else {
+            // a matrix
+            if ((type.vecsize == 2) && (type.columns == 2)) {
+                return "UniformType::Mat2";
+            }
+            else if ((type.vecsize == 3) && (type.columns == 3)) {
+                return "UniformType::Mat3";
+            }
+            else if ((type.vecsize == 4) && (type.columns == 4)) {
+                return "UniformType::Mat4";
+            }
+        }
+    }
+    else if (type.basetype == SPIRType::Int) {
+        return "UniformType::Int";
+    }
+    else if (type.basetype == SPIRType::Boolean) {
+        return "UniformType::Bool";
+    }
+    return "UniformType::InvalidUniformType";
+}
+
+//------------------------------------------------------------------------------
 void extract_resource_info(Compiler* compiler) {
     switch (compiler->get_execution_model()) {
         case ExecutionModelVertex:      Log::Info("type: vertex shader\n"); break;
@@ -51,9 +85,16 @@ void extract_resource_info(Compiler* compiler) {
     for (const auto& ub : res.uniform_buffers) {
         Log::Info("uniform_buffer: %s\n", ub.name.c_str());
         const SPIRType& type = compiler->get_type(ub.base_type_id);
-        for (int member_index = 0; member_index < type.member_types.size(); member_index++) {
-            string member_name = compiler->get_member_name(ub.base_type_id, member_index);
-            Log::Info("    %s\n", member_name.c_str());
+        for (int m_index = 0; m_index < int(type.member_types.size()); m_index++) {
+            string m_name = compiler->get_member_name(ub.base_type_id, m_index);
+            const SPIRType& m_type = compiler->get_type(type.member_types[m_index]);
+            const char* m_type_str = type_to_oryol_uniform_type(m_type);
+            if (m_type.array.size() > 0) {
+                Log::Info("    %s %s[%d]", m_type_str, m_name.c_str(), m_type.array[0]);
+            }
+            else {
+                Log::Info("    %s %s\n", m_type_str, m_name.c_str());
+            }
         }
     }   
     for (const auto& img : res.sampled_images) {
