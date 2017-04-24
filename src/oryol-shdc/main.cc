@@ -42,48 +42,48 @@ void write_source_file(const string& path, const string& content) {
 }
 
 //------------------------------------------------------------------------------
-const char* type_to_oryol_uniform_type(const SPIRType& type) {
+const char* type_to_uniform_type(const SPIRType& type) {
     if (type.basetype == SPIRType::Float) {
         if (type.columns == 1) {
             // scalar or vec
             switch (type.vecsize) {
-                case 1: return "UniformType::Float";
-                case 2: return "UniformType::Vec2";
-                case 3: return "UniformType::Vec3";
-                case 4: return "UniformType::Vec4";
+                case 1: return "float";
+                case 2: return "vec2";
+                case 3: return "vec3";
+                case 4: return "vec4";
             }
         }
         else {
             // a matrix
             if ((type.vecsize == 2) && (type.columns == 2)) {
-                return "UniformType::Mat2";
+                return "mat2";
             }
             else if ((type.vecsize == 3) && (type.columns == 3)) {
-                return "UniformType::Mat3";
+                return "mat3";
             }
             else if ((type.vecsize == 4) && (type.columns == 4)) {
-                return "UniformType::Mat4";
+                return "mat4";
             }
         }
     }
     else if (type.basetype == SPIRType::Int) {
-        return "UniformType::Int";
+        return "int";
     }
     else if (type.basetype == SPIRType::Boolean) {
-        return "UniformType::Bool";
+        return "bool";
     }
     Log::Fatal("Invalid member type in uniform block! (expected: float, vec2, vec3, vec4, mat2, mat3, mat4, int, bool)\n");
     return nullptr;
 }
 
 //------------------------------------------------------------------------------
-const char* type_to_oryol_vertex_format(const SPIRType& type) {
+const char* type_to_attr_format(const SPIRType& type) {
     if (type.basetype == SPIRType::Float && type.columns == 1) {
         switch (type.vecsize) {
-            case 1: return "VertexFormat::Float";
-            case 2: return "VertexFormat::Float2";
-            case 3: return "VertexFormat::Float3";
-            case 4: return "VertexFormat::Float4";
+            case 1: return "float";
+            case 2: return "vec2";
+            case 3: return "vec3";
+            case 4: return "vec4";
         }
     }
     Log::Fatal("Invalid vertex attribute type! (expected: float, vec2, vec3, vec4)\n");
@@ -97,8 +97,8 @@ cJSON* extract_resource_info(Compiler* compiler) {
     // shader stage
     const char* stage_str = nullptr;
     switch (compiler->get_execution_model()) {
-        case ExecutionModelVertex: stage_str = "ShaderStage::VS"; break;
-        case ExecutionModelFragment: stage_str = "ShaderStage::FS"; break;
+        case ExecutionModelVertex: stage_str = "vs"; break;
+        case ExecutionModelFragment: stage_str = "fs"; break;
         default: break;
     }
     if (stage_str) {
@@ -126,7 +126,7 @@ cJSON* extract_resource_info(Compiler* compiler) {
                 cJSON_AddItemToArray(ub_members, ub_member);
                 string m_name = compiler->get_member_name(ub_res.base_type_id, m_index);
                 const SPIRType& m_type = compiler->get_type(ub_type.member_types[m_index]);
-                const char* m_type_str = type_to_oryol_uniform_type(m_type);
+                const char* m_type_str = type_to_uniform_type(m_type);
                 cJSON_AddItemToObject(ub_member, "name", cJSON_CreateString(m_name.c_str()));
                 cJSON_AddItemToObject(ub_member, "type", cJSON_CreateString(m_type_str));
                 int dim = 1;
@@ -149,14 +149,14 @@ cJSON* extract_resource_info(Compiler* compiler) {
             const char* tex_type_str = nullptr;
             if (img_type.image.arrayed) {
                 if (img_type.image.dim == Dim2D) {
-                    tex_type_str = "TextureType::TextureArray";
+                    tex_type_str = "array2d";
                 }
             }
             else {
                 switch (img_type.image.dim) {
-                    case Dim2D:     tex_type_str = "TextureType::Texture2D"; break;
-                    case DimCube:   tex_type_str = "TextureType::TextureCube"; break;
-                    case Dim3D:     tex_type_str = "TextureType::Texture3D"; break;
+                    case Dim2D:     tex_type_str = "2d"; break;
+                    case DimCube:   tex_type_str = "cube"; break;
+                    case Dim3D:     tex_type_str = "3d"; break;
                     default:        break;
                 }
             }
@@ -168,21 +168,34 @@ cJSON* extract_resource_info(Compiler* compiler) {
         }
     }
 
-    // vertex attributes
-    if (compiler->get_execution_model() == ExecutionModelVertex) {
-        cJSON* attr_array = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "inputs", attr_array);
-        for (const Resource& input : res.stage_inputs) {
-            cJSON* attr = cJSON_CreateObject();
-            cJSON_AddItemToArray(attr_array, attr);
-            const SPIRType& type = compiler->get_type(input.base_type_id);
-            const char* attr_type_str = type_to_oryol_vertex_format(type);
-            uint32_t loc = compiler->get_decoration(input.id, DecorationLocation);
-            cJSON_AddItemToObject(attr, "name", cJSON_CreateString(input.name.c_str()));
-            cJSON_AddItemToObject(attr, "type", cJSON_CreateString(attr_type_str));
-            cJSON_AddItemToObject(attr, "slot", cJSON_CreateNumber(loc));
+    // stage inputs
+    cJSON* inputs_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(root, "inputs", inputs_array);
+    for (const Resource& stage_input : res.stage_inputs) {
+        cJSON* input = cJSON_CreateObject();
+        cJSON_AddItemToArray(inputs_array, input);
+        const SPIRType& type = compiler->get_type(stage_input.base_type_id);
+        const char* type_str = type_to_attr_format(type);
+        cJSON_AddItemToObject(input, "name", cJSON_CreateString(stage_input.name.c_str()));
+        cJSON_AddItemToObject(input, "type", cJSON_CreateString(type_str));
+        if (compiler->get_execution_model() == ExecutionModelVertex) {
+            uint32_t loc = compiler->get_decoration(stage_input.id, DecorationLocation);
+            cJSON_AddItemToObject(input, "slot", cJSON_CreateNumber(loc));
         }
     }
+
+    // stage outputs
+    cJSON* outputs_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(root, "outputs", outputs_array);
+    for (const Resource& stage_output : res.stage_outputs) {
+        cJSON* output = cJSON_CreateObject();
+        cJSON_AddItemToArray(outputs_array, output);
+        const SPIRType& type = compiler->get_type(stage_output.base_type_id);
+        const char* type_str = type_to_attr_format(type);
+        cJSON_AddItemToObject(output, "name", cJSON_CreateString(stage_output.name.c_str()));
+        cJSON_AddItemToObject(output, "type", cJSON_CreateString(type_str));
+    }
+
     return root;
 }
 
