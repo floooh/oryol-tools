@@ -109,63 +109,63 @@ cJSON* extract_resource_info(Compiler* compiler) {
     }
 
     // uniform blocks
+    int ub_slot = 0;
     ShaderResources res = compiler->get_shader_resources();
-    if (res.uniform_buffers.size() > 0) {
-        cJSON* ub_array = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "uniform_blocks", ub_array);
-        for (const Resource& ub_res : res.uniform_buffers) {
-            const SPIRType& ub_type = compiler->get_type(ub_res.base_type_id);
-            cJSON* ub = cJSON_CreateObject();
-            cJSON_AddItemToArray(ub_array, ub);
-            cJSON_AddItemToObject(ub, "type", cJSON_CreateString(ub_res.name.c_str()));
-            cJSON_AddItemToObject(ub, "name", cJSON_CreateString(compiler->get_name(ub_res.id).c_str()));
-            cJSON* ub_members = cJSON_CreateArray();
-            cJSON_AddItemToObject(ub, "members", ub_members);
-            for (int m_index = 0; m_index < int(ub_type.member_types.size()); m_index++) {
-                cJSON* ub_member = cJSON_CreateObject();
-                cJSON_AddItemToArray(ub_members, ub_member);
-                string m_name = compiler->get_member_name(ub_res.base_type_id, m_index);
-                const SPIRType& m_type = compiler->get_type(ub_type.member_types[m_index]);
-                const char* m_type_str = type_to_uniform_type(m_type);
-                cJSON_AddItemToObject(ub_member, "name", cJSON_CreateString(m_name.c_str()));
-                cJSON_AddItemToObject(ub_member, "type", cJSON_CreateString(m_type_str));
-                int dim = 1;
-                if (m_type.array.size() > 0) {
-                    dim = m_type.array[0];
-                }
-                cJSON_AddItemToObject(ub_member, "dim", cJSON_CreateNumber(dim));
+    cJSON* ub_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(root, "uniform_blocks", ub_array);
+    for (const Resource& ub_res : res.uniform_buffers) {
+        const SPIRType& ub_type = compiler->get_type(ub_res.base_type_id);
+        cJSON* ub = cJSON_CreateObject();
+        cJSON_AddItemToArray(ub_array, ub);
+        cJSON_AddItemToObject(ub, "type", cJSON_CreateString(ub_res.name.c_str()));
+        cJSON_AddItemToObject(ub, "name", cJSON_CreateString(compiler->get_name(ub_res.id).c_str()));
+        cJSON_AddItemToObject(ub, "slot", cJSON_CreateNumber(ub_slot++));
+        cJSON* ub_members = cJSON_CreateArray();
+        cJSON_AddItemToObject(ub, "members", ub_members);
+        for (int m_index = 0; m_index < int(ub_type.member_types.size()); m_index++) {
+            cJSON* ub_member = cJSON_CreateObject();
+            cJSON_AddItemToArray(ub_members, ub_member);
+            string m_name = compiler->get_member_name(ub_res.base_type_id, m_index);
+            const SPIRType& m_type = compiler->get_type(ub_type.member_types[m_index]);
+            const char* m_type_str = type_to_uniform_type(m_type);
+            cJSON_AddItemToObject(ub_member, "name", cJSON_CreateString(m_name.c_str()));
+            cJSON_AddItemToObject(ub_member, "type", cJSON_CreateString(m_type_str));
+            int num = 1;
+            if (m_type.array.size() > 0) {
+                num = m_type.array[0];
             }
+            cJSON_AddItemToObject(ub_member, "num", cJSON_CreateNumber(num));
         }
     }
 
     // textures
-    if (res.sampled_images.size() > 0) {
-        cJSON* tex_array = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "textures", tex_array);
-        for (const Resource& img_res : res.sampled_images) {
-            const SPIRType& img_type = compiler->get_type(img_res.type_id);
-            cJSON* tex = cJSON_CreateObject();
-            cJSON_AddItemToArray(tex_array, tex);
-            const char* tex_type_str = nullptr;
-            if (img_type.image.arrayed) {
-                if (img_type.image.dim == Dim2D) {
-                    tex_type_str = "array2d";
-                }
+    int tex_slot = 0;
+    cJSON* tex_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(root, "textures", tex_array);
+    for (const Resource& img_res : res.sampled_images) {
+        const SPIRType& img_type = compiler->get_type(img_res.type_id);
+        cJSON* tex = cJSON_CreateObject();
+        cJSON_AddItemToArray(tex_array, tex);
+        const char* tex_type_str = nullptr;
+        if (img_type.image.arrayed) {
+            if (img_type.image.dim == Dim2D) {
+                tex_type_str = "sampler2DArray";
             }
-            else {
-                switch (img_type.image.dim) {
-                    case Dim2D:     tex_type_str = "2d"; break;
-                    case DimCube:   tex_type_str = "cube"; break;
-                    case Dim3D:     tex_type_str = "3d"; break;
-                    default:        break;
-                }
-            }
-            if (!tex_type_str) {
-                Log::Fatal("Invalid texture type! (expected: 2D, Cube, 3D or 2D-array)\n");
-            }
-            cJSON_AddItemToObject(tex, "name", cJSON_CreateString(img_res.name.c_str()));
-            cJSON_AddItemToObject(tex, "type", cJSON_CreateString(tex_type_str));
         }
+        else {
+            switch (img_type.image.dim) {
+                case Dim2D:     tex_type_str = "sampler2D"; break;
+                case DimCube:   tex_type_str = "samplerCube"; break;
+                case Dim3D:     tex_type_str = "sampler3D"; break;
+                default:        break;
+            }
+        }
+        if (!tex_type_str) {
+            Log::Fatal("Invalid texture type! (expected: 2D, Cube, 3D or 2D-array)\n");
+        }
+        cJSON_AddItemToObject(tex, "name", cJSON_CreateString(img_res.name.c_str()));
+        cJSON_AddItemToObject(tex, "type", cJSON_CreateString(tex_type_str));
+        cJSON_AddItemToObject(tex, "slot", cJSON_CreateNumber(tex_slot++));
     }
 
     // stage inputs
