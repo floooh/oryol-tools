@@ -241,11 +241,12 @@ void to_reflection_json(const vector<uint32_t>& spirv, const string& base_path) 
 }
 
 //------------------------------------------------------------------------------
-void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
+void to_glsl(const vector<uint32_t>& spirv, const string& base_path, const string& file_ext, uint32_t version, bool is_es) {
     CompilerGLSL compiler(spirv);
     auto opts = compiler.get_options();
-    opts.version = 100;
-    opts.es = true;
+    opts.version = version;
+    opts.es = is_es;
+    opts.vertex.fixup_clipspace = false;
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     string src = compiler.compile();
@@ -253,58 +254,7 @@ void to_glsl_100(const vector<uint32_t>& spirv, const string& base_path) {
         Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
     }
     else {
-        write_source_file(base_path + ".glsl100.glsl", src);
-    }
-}
-
-//------------------------------------------------------------------------------
-void to_glsl_120(const vector<uint32_t>& spirv, const string& base_path) {
-    CompilerGLSL compiler(spirv);
-    auto opts = compiler.get_options();
-    opts.version = 120;
-    opts.es = false;
-    compiler.set_options(opts);
-    fix_vertex_attr_locations(&compiler);
-    string src = compiler.compile();
-    if (src.empty()) {
-        Log::Fatal("Failed to compile GLSL v120 source for '%s'!\n", base_path.c_str());
-    }
-    else {
-        write_source_file(base_path + ".glsl120.glsl", src);
-    }
-}
-
-//------------------------------------------------------------------------------
-void to_glsl_es3(const vector<uint32_t>& spirv, const string& base_path) {
-    CompilerGLSL compiler(spirv);
-    auto opts = compiler.get_options();
-    opts.version = 300;
-    opts.es = true;
-    compiler.set_options(opts);
-    fix_vertex_attr_locations(&compiler);
-    string src = compiler.compile();
-    if (src.empty()) {
-        Log::Fatal("Failed to compile GLSL es3 source for '%s'!\n", base_path.c_str());
-    }
-    else {
-        write_source_file(base_path + ".glsles3.glsl", src);
-    }
-}
-
-//------------------------------------------------------------------------------
-void to_glsl_330(const vector<uint32_t>& spirv, const string& base_path) {
-    CompilerGLSL compiler(spirv);
-    auto opts = compiler.get_options();
-    opts.version = 330;
-    opts.es = false;
-    compiler.set_options(opts);
-    fix_vertex_attr_locations(&compiler);
-    string src = compiler.compile();
-    if (src.empty()) {
-        Log::Fatal("Failed to compile GLSL v330 source for '%s'!\n", base_path.c_str());
-    }
-    else {
-        write_source_file(base_path + ".glsl330.glsl", src);
+        write_source_file(base_path + file_ext, src);
     }
 }
 
@@ -365,10 +315,10 @@ int main(int argc, const char** argv) {
     string base_path, ext;
     pystring::os::path::splitext(base_path, ext, spirv_path);
     to_reflection_json(spirv, base_path);
-    to_glsl_100(spirv, base_path);
-    to_glsl_120(spirv, base_path);
-    to_glsl_es3(spirv, base_path);
-    to_glsl_330(spirv, base_path);
+    to_glsl(spirv, base_path, ".glsl100.glsl", 100, true);
+    to_glsl(spirv, base_path, ".glsl120.glsl", 120, false);
+    to_glsl(spirv, base_path, ".glsles3.glsl", 300, true);
+    to_glsl(spirv, base_path, ".glsl330.glsl", 330, false);
 //    to_hlsl_sm5(spirv, base_path);
 //    to_mlsl(spirv, base_path);
 
