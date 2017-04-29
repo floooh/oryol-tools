@@ -325,7 +325,7 @@ int main(int argc, const char** argv) {
     to_glsl(spirv, base_path, ".glsl120.glsl", 120, false);
     to_glsl(spirv, base_path, ".glsles3.glsl", 300, true);
     to_glsl(spirv, base_path, ".glsl330.glsl", 330, false);
-//    to_hlsl_sm5(spirv, base_path);
+    to_hlsl_sm5(spirv, base_path);
     to_mlsl(spirv, base_path);
 
     return 0;
