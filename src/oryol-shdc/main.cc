@@ -235,6 +235,23 @@ void fix_vertex_attr_locations(Compiler* compiler) {
 }
 
 //------------------------------------------------------------------------------
+void fix_ub_matrix_force_colmajor(Compiler* compiler) {
+    // go though all uniform block matrixes and decorate them with
+    // column-major, this is needed in the HLSL backend to fix the
+    // multiplication order
+    ShaderResources res = compiler->get_shader_resources();
+    for (const Resource& ub_res : res.uniform_buffers) {
+        const SPIRType& ub_type = compiler->get_type(ub_res.base_type_id);
+        for (int m_index = 0; m_index < int(ub_type.member_types.size()); m_index++) {
+            const SPIRType& m_type = compiler->get_type(ub_type.member_types[m_index]);
+            if ((m_type.basetype == SPIRType::Float) && (m_type.vecsize > 1) && (m_type.columns > 1)) {
+                compiler->set_member_decoration(ub_res.base_type_id, m_index, DecorationColMajor);
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 void to_reflection_json(const vector<uint32_t>& spirv, const string& base_path) {
     CompilerGLSL compiler(spirv);
     fix_vertex_attr_locations(&compiler);
@@ -255,6 +272,7 @@ void to_glsl(const vector<uint32_t>& spirv, const string& base_path, const strin
     opts.vertex.fixup_clipspace = false;
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
+    fix_ub_matrix_force_colmajor(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
@@ -272,6 +290,7 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
     opts.fixup_clipspace = true;
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
+    fix_ub_matrix_force_colmajor(&compiler);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile HLSL5 source for '%s'!\n", base_path.c_str());
