@@ -288,6 +288,7 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
     auto opts = compiler.get_options();
     opts.shader_model = 50;
     opts.fixup_clipspace = true;
+    opts.point_size_compat = true;
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
