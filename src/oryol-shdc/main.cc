@@ -252,15 +252,13 @@ void fix_ub_matrix_force_colmajor(Compiler* compiler) {
 }
 
 //------------------------------------------------------------------------------
-void to_reflection_json(const vector<uint32_t>& spirv, const string& base_path) {
-    CompilerGLSL compiler(spirv);
-    fix_vertex_attr_locations(&compiler);
-    cJSON* json = extract_resource_info(&compiler);
+void write_reflection_json(Compiler* compiler, const string& base_path, const string& ext) {
+    cJSON* json = extract_resource_info(compiler);
     char* json_raw_str = cJSON_Print(json);
     string json_str(json_raw_str);
     std::free(json_raw_str);
     cJSON_Delete(json);
-    write_source_file(base_path + ".json", json_str);
+    write_source_file(base_path + ext + ".json", json_str);
 }
 
 //------------------------------------------------------------------------------
@@ -273,6 +271,7 @@ void to_glsl(const vector<uint32_t>& spirv, const string& base_path, const strin
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
+    write_reflection_json(&compiler, base_path, file_ext);
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
@@ -292,6 +291,7 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
+    write_reflection_json(&compiler, base_path, ".hlsl");
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile HLSL5 source for '%s'!\n", base_path.c_str());
@@ -305,6 +305,7 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
 void to_mlsl(const vector<uint32_t>& spirv, const string& base_path) {
     CompilerMSL compiler(spirv);
     fix_vertex_attr_locations(&compiler);
+    write_reflection_json(&compiler, base_path, ".metal");
     string src = compiler.compile();
     if (src.empty()) {
         Log::Fatal("Failed to compile MetalSL source for '%s'!\n", base_path.c_str());
@@ -341,11 +342,10 @@ int main(int argc, const char** argv) {
     // ...translate and write to output files...
     string base_path, ext;
     pystring::os::path::splitext(base_path, ext, spirv_path);
-    to_reflection_json(spirv, base_path);
-    to_glsl(spirv, base_path, ".glsl100.glsl", 100, true);
-    to_glsl(spirv, base_path, ".glsl120.glsl", 120, false);
-    to_glsl(spirv, base_path, ".glsles3.glsl", 300, true);
-    to_glsl(spirv, base_path, ".glsl330.glsl", 330, false);
+    to_glsl(spirv, base_path, ".glsl100", 100, true);
+    to_glsl(spirv, base_path, ".glsl120", 120, false);
+    to_glsl(spirv, base_path, ".glsles3", 300, true);
+    to_glsl(spirv, base_path, ".glsl330", 330, false);
     to_hlsl_sm5(spirv, base_path);
     to_mlsl(spirv, base_path);
 
