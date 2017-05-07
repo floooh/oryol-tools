@@ -68,10 +68,7 @@ const char* type_to_uniform_type(const SPIRType& type) {
     else if (type.basetype == SPIRType::Int) {
         return "int";
     }
-    else if (type.basetype == SPIRType::Boolean) {
-        return "bool";
-    }
-    Log::Fatal("Invalid member type in uniform block! (expected: float, vec2, vec3, vec4, mat2, mat3, mat4, int, bool)\n");
+    Log::Fatal("Invalid member type in uniform block! (expected: float, vec2, vec3, vec4, mat2, mat3, mat4, int)\n");
     return nullptr;
 }
 
