@@ -5,7 +5,6 @@
 #include "ExportUtil/Log.h"
 #include "spirv_hlsl.hpp"
 #include "spirv_msl.hpp"
-#include "pystring.h"
 #include "cJSON.h"
 #include <stdio.h>
 
@@ -252,17 +251,17 @@ void fix_ub_matrix_force_colmajor(Compiler* compiler) {
 }
 
 //------------------------------------------------------------------------------
-void write_reflection_json(Compiler* compiler, const string& base_path, const string& ext) {
+void write_reflection_json(Compiler* compiler, const string& out_path) {
     cJSON* json = extract_resource_info(compiler);
     char* json_raw_str = cJSON_Print(json);
     string json_str(json_raw_str);
     std::free(json_raw_str);
     cJSON_Delete(json);
-    write_source_file(base_path + ext + ".json", json_str);
+    write_source_file(out_path, json_str);
 }
 
 //------------------------------------------------------------------------------
-void to_glsl(const vector<uint32_t>& spirv, const string& base_path, const string& file_ext, uint32_t version, bool is_es) {
+void to_glsl(const vector<uint32_t>& spirv, const string& out_path, uint32_t version, bool is_es) {
     CompilerGLSL compiler(spirv);
     auto opts = compiler.get_options();
     opts.version = version;
@@ -271,18 +270,18 @@ void to_glsl(const vector<uint32_t>& spirv, const string& base_path, const strin
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
-    write_reflection_json(&compiler, base_path, file_ext);
+    write_reflection_json(&compiler, out_path + ".json");
     string src = compiler.compile();
     if (src.empty()) {
-        Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", base_path.c_str());
+        Log::Fatal("Failed to compile GLSL v100 source for '%s'!\n", out_path.c_str());
     }
     else {
-        write_source_file(base_path + file_ext, src);
+        write_source_file(out_path, src);
     }
 }
 
 //------------------------------------------------------------------------------
-void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
+void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& out_path) {
     CompilerHLSL compiler(spirv);
     auto opts = compiler.get_options();
     opts.shader_model = 50;
@@ -291,27 +290,27 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& base_path) {
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
-    write_reflection_json(&compiler, base_path, ".hlsl");
+    write_reflection_json(&compiler, out_path + ".json");
     string src = compiler.compile();
     if (src.empty()) {
-        Log::Fatal("Failed to compile HLSL5 source for '%s'!\n", base_path.c_str());
+        Log::Fatal("Failed to compile HLSL5 source for '%s'!\n", out_path.c_str());
     }
     else {
-        write_source_file(base_path + ".hlsl", src);
+        write_source_file(out_path, src);
     }
 }
 
 //------------------------------------------------------------------------------
-void to_mlsl(const vector<uint32_t>& spirv, const string& base_path) {
+void to_mlsl(const vector<uint32_t>& spirv, const string& out_path) {
     CompilerMSL compiler(spirv);
     fix_vertex_attr_locations(&compiler);
-    write_reflection_json(&compiler, base_path, ".metal");
+    write_reflection_json(&compiler, out_path + ".json");
     string src = compiler.compile();
     if (src.empty()) {
-        Log::Fatal("Failed to compile MetalSL source for '%s'!\n", base_path.c_str());
+        Log::Fatal("Failed to compile MetalSL source for '%s'!\n", out_path.c_str());
     }
     else {
-        write_source_file(base_path + ".metal", src);
+        write_source_file(out_path, src);
     }
 }
 
@@ -320,6 +319,8 @@ int main(int argc, const char** argv) {
     CmdLineArgs args;
     args.AddBool("-help", "show help");
     args.AddString("-spirv", "SPIR-V input file", "");
+    args.AddString("-o", "output file", "");
+    args.AddString("-lang", "target language (glsl100, glsles3, glsl120, glsl330, metal, hlsl", "");
     if (!args.Parse(argc, argv)) {
         Log::Warn("Failed to parse args!\n");
         return 10; 
@@ -335,19 +336,42 @@ int main(int argc, const char** argv) {
     if (spirv_path.empty()) {
         Log::Fatal("-spirv arg expected");
     }
+    string out_path = args.GetString("-o");
+    if (out_path.empty()) {
+        Log::Fatal("-o arg expected");
+    }
+    string lang = args.GetString("-lang");
+    if (lang.empty()) {
+        Log::Fatal("-lang arg expected");
+    }
+    if (!((lang == "glsl100") || (lang == "glsles3") || (lang == "glsl120") ||
+          (lang == "glsl330") || (lang == "metal") || (lang == "hlsl")))
+    {
+        Log::Fatal("-lang must be glsl100, glsles3, glsl120, glsl330, metal or hlsl");
+    }
 
     // load SPIRV byte code
     auto spirv = read_spirv_file(spirv_path);
 
     // ...translate and write to output files...
-    string base_path, ext;
-    pystring::os::path::splitext(base_path, ext, spirv_path);
-    to_glsl(spirv, base_path, ".glsl100", 100, true);
-    to_glsl(spirv, base_path, ".glsl120", 120, false);
-    to_glsl(spirv, base_path, ".glsles3", 300, true);
-    to_glsl(spirv, base_path, ".glsl330", 330, false);
-    to_hlsl_sm5(spirv, base_path);
-    to_mlsl(spirv, base_path);
+    if (lang == "glsl100") {
+        to_glsl(spirv, out_path, 100, true);
+    }
+    else if (lang == "glsl120") {
+        to_glsl(spirv, out_path, 120, false);
+    }
+    else if (lang == "glsles3") {
+        to_glsl(spirv, out_path, 300, true);
+    }
+    else if (lang == "glsl330") {
+        to_glsl(spirv, out_path, 330, false);
+    }
+    else if (lang == "hlsl") {
+        to_hlsl_sm5(spirv, out_path);
+    }
+    else if (lang == "metal") {
+        to_mlsl(spirv, out_path);
+    }
 
     return 0;
 }
