@@ -112,6 +112,7 @@ cJSON* extract_resource_info(Compiler* compiler) {
     for (const Resource& ub_res : res.uniform_buffers) {
         const SPIRType& ub_type = compiler->get_type(ub_res.base_type_id);
         string ub_name = compiler->get_name(ub_res.id);
+        int ub_size = (int) compiler->get_declared_struct_size(ub_type);
         if (ub_name.empty()) {
             char buf[64];
             snprintf(buf, sizeof(buf), "_%d", ub_res.id);
@@ -122,6 +123,7 @@ cJSON* extract_resource_info(Compiler* compiler) {
         cJSON_AddItemToObject(ub, "type", cJSON_CreateString(ub_res.name.c_str()));
         cJSON_AddItemToObject(ub, "name", cJSON_CreateString(ub_name.c_str()));
         cJSON_AddItemToObject(ub, "slot", cJSON_CreateNumber(ub_slot++));
+        cJSON_AddItemToObject(ub, "size", cJSON_CreateNumber(ub_size));
         cJSON* ub_members = cJSON_CreateArray();
         cJSON_AddItemToObject(ub, "members", ub_members);
         for (int m_index = 0; m_index < int(ub_type.member_types.size()); m_index++) {
