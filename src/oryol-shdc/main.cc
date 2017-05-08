@@ -127,7 +127,7 @@ cJSON* extract_resource_info(Compiler* compiler) {
         for (int m_index = 0; m_index < int(ub_type.member_types.size()); m_index++) {
             cJSON* ub_member = cJSON_CreateObject();
             cJSON_AddItemToArray(ub_members, ub_member);
-            string m_name = compiler->get_member_name(ub_res.base_type_id, m_index);
+            const string m_name = compiler->get_member_name(ub_res.base_type_id, m_index);
             const SPIRType& m_type = compiler->get_type(ub_type.member_types[m_index]);
             const char* m_type_str = type_to_uniform_type(m_type);
             cJSON_AddItemToObject(ub_member, "name", cJSON_CreateString(m_name.c_str()));
@@ -137,6 +137,16 @@ cJSON* extract_resource_info(Compiler* compiler) {
                 num = m_type.array[0];
             }
             cJSON_AddItemToObject(ub_member, "num", cJSON_CreateNumber(num));
+            const uint32_t offset = compiler->type_struct_member_offset(ub_type, m_index);
+            cJSON_AddItemToObject(ub_member, "offset", cJSON_CreateNumber(offset));
+            if (compiler->has_member_decoration(ub_res.base_type_id, m_index, DecorationArrayStride)) {
+                const uint32_t array_stride = compiler->type_struct_member_array_stride(ub_type, m_index);
+                cJSON_AddItemToObject(ub_member, "array_stride", cJSON_CreateNumber(array_stride));
+            }
+            if (compiler->has_member_decoration(ub_res.base_type_id, m_index, DecorationMatrixStride)) {
+                const uint32_t matrix_stride = compiler->type_struct_member_matrix_stride(ub_type, m_index);
+                cJSON_AddItemToObject(ub_member, "matrix_stride", cJSON_CreateNumber(matrix_stride));
+            }
         }
     }
 
@@ -248,6 +258,16 @@ void fix_ub_matrix_force_colmajor(Compiler* compiler) {
 }
 
 //------------------------------------------------------------------------------
+void flatten_uniform_blocks(CompilerGLSL* compiler) {
+    // this flattens each uniform block into a vec4 array, in WebGL/GLES2 this
+    // allows more efficient uniform updates
+    ShaderResources res = compiler->get_shader_resources();
+    for (const Resource& ub_res : res.uniform_buffers) {
+        compiler->flatten_buffer_block(ub_res.id);
+    }
+}
+
+//------------------------------------------------------------------------------
 void write_reflection_json(Compiler* compiler, const string& out_path) {
     cJSON* json = extract_resource_info(compiler);
     char* json_raw_str = cJSON_Print(json);
@@ -267,6 +287,7 @@ void to_glsl(const vector<uint32_t>& spirv, const string& out_path, uint32_t ver
     compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
+    flatten_uniform_blocks(&compiler);
     write_reflection_json(&compiler, out_path + ".json");
     string src = compiler.compile();
     if (src.empty()) {
