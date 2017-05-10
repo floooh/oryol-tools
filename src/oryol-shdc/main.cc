@@ -323,6 +323,9 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& out_path) {
 //------------------------------------------------------------------------------
 void to_mlsl(const vector<uint32_t>& spirv, const string& out_path) {
     CompilerMSL compiler(spirv);
+    auto opts = compiler.get_options();
+    opts.pad_and_pack_uniform_structs = true;
+    compiler.set_options(opts);
     fix_vertex_attr_locations(&compiler);
     write_reflection_json(&compiler, out_path + ".json");
     string src = compiler.compile();
