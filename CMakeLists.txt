@@ -17,6 +17,11 @@ endif()
 include_directories(src)
 fips_add_subdirectory(src)
 
+# on Linux link everything statically to prevent DLL version hell between Linux distros
+if (FIPS_LINUX)
+    set_target_properties(oryol-shdc oryol-export PROPERTIES LINK_FLAGS "-static")
+endif()
+
 if (NOT FIPS_IMPORT)
     fips_finish()
 endif()
