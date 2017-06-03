@@ -17,6 +17,8 @@ public:
     static void Warn(const char* str, ...);
     /// display an error message and terminate the program
     static void Fatal(const char* str, ...);
+    /// if condition is true, print error message and fail
+    static void FailIf(bool cond, const char* str, ...);
 };
 
 } // namespace OryolTools

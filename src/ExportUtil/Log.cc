@@ -39,5 +39,20 @@ Log::Fatal(const char* str, ...) {
     exit(10);
 }
 
+//------------------------------------------------------------------------------
+void
+Log::FailIf(bool cond, const char* str, ...) {
+    if (cond) {
+        va_list args;
+        va_start(args, str);
+        std::fprintf(stderr, "[error] ");
+        std::vfprintf(stderr, str, args);
+        va_end(args);
+        std::fflush(stdout);
+        std::fflush(stderr);
+        exit(10);
+    }
+}
+
 } // namespace OryolTools
 
