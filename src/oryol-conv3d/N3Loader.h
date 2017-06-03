@@ -17,6 +17,9 @@ struct N3Loader {
 
     /// load N3 model into internal data structures
     void LoadN3(const std::string& path);
+    /// load NVX2 mesh data
+    void LoadMeshes(const std::string& n3AssetDir);
+
     /// parse a top-level ModelNode tag
     void ParseModelNodeTag(FILE* fp, uint32_t tag);
     /// parse a TransformNode tag

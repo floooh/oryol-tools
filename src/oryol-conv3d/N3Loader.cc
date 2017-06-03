@@ -5,6 +5,7 @@
 #include "ExportUtil/Log.h"
 #include "pystring.h"
 #include <stdio.h>
+#include <set>
 
 using namespace OryolTools;
 
@@ -36,8 +37,8 @@ N3Loader::Load(const std::string& n3AssetName, const std::string& n3AssetDir, IR
 
     std::string path = n3AssetDir + "/models/" + n3AssetName;
 
-    // load the .n3 file
     this->LoadN3(path);
+    this->LoadMeshes(n3AssetDir);
 }
 
 //------------------------------------------------------------------------------
@@ -98,7 +99,6 @@ N3Loader::LoadN3(const std::string& path) {
                 break;
         }
     }
-
     fclose(fp);
 }
 
@@ -428,3 +428,48 @@ N3Loader::ParseCharacterSkinNodeTag(FILE* fp, uint32_t tag) {
     }
 }
 
+//------------------------------------------------------------------------------
+#pragma pack(push, 1)
+struct Nvx2Header {
+    uint32_t Magic = 0;
+    uint32_t NumGroups = 0;
+    uint32_t NumVertices = 0;
+    uint32_t VertexWidth = 0;
+    uint32_t NumTriangles = 0;
+    uint32_t NumEdges = 0;
+    uint32_t VertexComponentMask = 0;
+};
+struct Nvx2Group {
+    uint32_t FirstVertex = 0;
+    uint32_t NumVertices = 0;
+    uint32_t FirstTriangle = 0;
+    uint32_t NumTriangles = 0;
+    uint32_t FirstEgde = 0;
+    uint32_t NumEdges = 0;
+};
+#pragma pack(pop)
+
+void
+N3Loader::LoadMeshes(const std::string& n3AssetDir) {
+
+    // for each node with mesh data...
+    std::set<std::string> loadedMeshes;
+    for (const auto& node : this->Nodes) {
+        if (node.Mesh.empty()) {
+            continue;   // no mesh in this node
+        }
+        if (loadedMeshes.find(node.Mesh) != loadedMeshes.end()) {
+            continue;   // mesh already loaded, skip this node
+        }
+        loadedMeshes.insert(node.Mesh);
+        std::string meshPath = n3AssetDir + "/meshes/" + node.Mesh;
+        FILE* fp = fopen(meshPath.c_str(), "rb");
+        Log::FailIf(!fp, "Failed to open mesh file '%s'\n", meshPath.c_str());
+
+        // load header data
+        Nvx2Header hdr = read<Nvx2Header>(fp);
+        Log::FailIf(hdr.Magic != 'NVX2', "Magic number mismatch in '%s'\n", meshPath.c_str());
+
+        fclose(fp);
+    }
+}
