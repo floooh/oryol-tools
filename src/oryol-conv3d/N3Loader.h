@@ -20,6 +20,8 @@ struct N3Loader {
     void LoadN3(const std::string& path);
     /// load NVX2 mesh data
     void LoadMeshes(const std::string& n3AssetDir);
+    /// write loading result into intermediate representation
+    void ToIRep(IRep& irep);
 
     /// parse a top-level ModelNode tag
     void ParseModelNodeTag(FILE* fp, uint32_t tag);

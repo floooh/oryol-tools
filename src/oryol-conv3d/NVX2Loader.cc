@@ -46,6 +46,56 @@ NVX2Loader::HasMesh(const std::string& nvx2AssetName) const {
 }
 
 //------------------------------------------------------------------------------
+const NVX2Loader::Mesh&
+NVX2Loader::MeshByName(const std::string& nvx2AssetName) const {
+    Log::FailIf(!this->HasMesh(nvx2AssetName), "Mesh '%s' not found!\n", nvx2AssetName.c_str());
+    for (const auto& mesh : this->Meshes) {
+        if (mesh.Name == nvx2AssetName) {
+            return mesh;
+        }
+    }
+    static NVX2Loader::Mesh dummy;
+    return dummy;
+}
+
+//------------------------------------------------------------------------------
+NVX2Loader::PrimGroup
+NVX2Loader::AbsPrimGroup(const std::string& nvx2AssetName, int localPrimGroupIndex) const {
+    int baseVertex = 0;
+    int baseIndex = 0;
+    PrimGroup primGroup;
+    for (const auto& mesh : this->Meshes) {
+        if (mesh.Name == nvx2AssetName) {
+            primGroup = mesh.PrimGroups[localPrimGroupIndex];
+            primGroup.FirstVertex += baseVertex;
+            primGroup.FirstIndex += baseIndex;
+            break;
+        }
+        else {
+            baseVertex += mesh.NumVertices;
+            baseIndex += mesh.NumIndices;
+        }
+    }
+    return primGroup;
+}
+
+
+//------------------------------------------------------------------------------
+void
+NVX2Loader::ValidateVertexLayouts() const {
+    if (this->Meshes.empty()) {
+        return;
+    }
+    const std::vector<Component>& comps = this->Meshes[0].Components;
+    for (const auto& mesh : this->Meshes) {
+        Log::FailIf(comps.size() != mesh.Components.size(), "NVX2Loader: meshes have different vertex layout!\n");
+        for (int i = 0; i < (int)comps.size(); i++) {
+            Log::FailIf(comps[i] != mesh.Components[i], "NVX2Loader: meshes have different vertex layout!\n");
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 void
 NVX2Loader::Clear() {
     this->Layout.Components.clear();

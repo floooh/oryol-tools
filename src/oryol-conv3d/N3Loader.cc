@@ -20,6 +20,7 @@ N3Loader::Load(const std::string& n3AssetName, const std::string& n3AssetDir, IR
 
     this->LoadN3(path);
     this->LoadMeshes(n3AssetDir);
+    this->ToIRep(irep);
 }
 
 //------------------------------------------------------------------------------
@@ -427,4 +428,82 @@ N3Loader::LoadMeshes(const std::string& n3AssetDir) {
         }
         this->nvx2Loader.Load(node.Mesh, n3AssetDir);
     }
+    this->nvx2Loader.ValidateVertexLayouts();
+}
+
+//------------------------------------------------------------------------------
+void
+N3Loader::ToIRep(IRep& irep) {
+
+    // vertex components
+    for (const auto& srcComp : this->nvx2Loader.Meshes[0].Components) {
+        IRep::VertexComponent dstComp;
+        dstComp.Attr = srcComp.Attr;
+        dstComp.Format = srcComp.DstFormat;
+        dstComp.Offset = srcComp.DstOffset;
+        irep.VertexComponents.push_back(dstComp);
+    }
+
+    // each N3 node with a shader becomes one Material and 1..N Meshes
+    char strBuffer[4096];
+    for (int nodeIndex = 0; nodeIndex < (int)this->Nodes.size(); nodeIndex++) {
+        const auto& n3Node = this->Nodes[nodeIndex];
+        if (!n3Node.Shader.empty() && !n3Node.Mesh.empty()) {
+            irep.Materials.push_back(IRep::Material());
+            auto& mat = irep.Materials.back();
+
+            // setup material
+            std::snprintf(strBuffer, sizeof(strBuffer), "mat%d", nodeIndex);
+            mat.Name = strBuffer;
+            mat.Shader = n3Node.Shader;
+            for (const auto& n3Tex : n3Node.Textures) {
+                IRep::TextureProperty prop;
+                prop.Name = n3Tex.first;
+                prop.Location = n3Tex.second;
+                mat.Textures.push_back(prop);
+            }
+            for (const auto& n3Param : n3Node.FloatParams) {
+                IRep::ValueProperty prop;
+                prop.Name = n3Param.first;
+                prop.Type = IRep::PropType::Float;
+                prop.Value.x = n3Param.second;
+                mat.Values.push_back(prop);
+            }
+            for (const auto& n3Param : n3Node.VecParams) {
+                IRep::ValueProperty prop;
+                prop.Name = n3Param.first;
+                prop.Type = IRep::PropType::Float4;
+                prop.Value = n3Param.second;
+                mat.Values.push_back(prop);
+            }
+
+            // setup mesh
+            if (n3Node.SkinFragments.empty()) {
+                // no skin fragments...
+                auto nvx2PrimGroup = this->nvx2Loader.AbsPrimGroup(n3Node.Mesh, n3Node.PrimGroup);
+                IRep::Mesh mesh;
+                mesh.FirstVertex = nvx2PrimGroup.FirstVertex;
+                mesh.NumVertices = nvx2PrimGroup.NumVertices;
+                mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
+                mesh.NumIndices = nvx2PrimGroup.NumIndices;
+                mesh.Material = irep.Materials.size() - 1;
+                irep.Meshes.push_back(mesh);
+            }
+            else {
+                // one mesh per skin fragment
+                for (const auto& frag : n3Node.SkinFragments) {
+                    auto nvx2PrimGroup = this->nvx2Loader.AbsPrimGroup(n3Node.Mesh, frag.PrimGroup);
+                    IRep::Mesh mesh;
+                    mesh.FirstVertex = nvx2PrimGroup.FirstVertex;
+                    mesh.NumVertices = nvx2PrimGroup.NumVertices;
+                    mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
+                    mesh.NumIndices = nvx2PrimGroup.NumIndices;
+                    irep.Meshes.push_back(mesh);
+                }
+            }
+        }
+    }
+
+
+
 }

@@ -133,7 +133,6 @@ public:
 struct VertexComponent {
     VertexComponent(VertexAttr::Code attr, VertexFormat::Code fmt=VertexFormat::Invalid, float scale=1.0f, float bias=0.0f):
         Attr(attr), Format(fmt), Scale(scale), Bias(bias) { };
-
     VertexAttr::Code Attr = VertexAttr::Invalid;
     VertexFormat::Code Format = VertexFormat::Invalid;
     float Scale = 1.0f;

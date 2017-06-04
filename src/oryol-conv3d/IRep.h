@@ -8,38 +8,13 @@
 #include <vector>
 #include <glm/vec4.hpp>
 #include <glm/vec3.hpp>
+#include "ExportUtil/Vertex.h"
 
 struct IRep {
-    struct VertexAttr {
-        enum Enum {
-            Position,
-            Normal,
-            TexCoord0,
-            TexCoord1,
-            TexCoord2,
-            TexCoord3,
-            Tangent,
-            Binormal,
-            Weights,
-            Indices,
-            Color0,
-            Color1,
-            Invalid,
-        };
-    };
-    struct VertexFormat {
-        enum Enum {
-            Float,
-            Float2,
-            Float3,
-            Float4,
-            Invalid,
-        };
-    };
     struct VertexComponent {
-        VertexAttr::Enum Attr = VertexAttr::Invalid;
-        VertexFormat::Enum Format = VertexFormat::Invalid;
-        int Offset = 0;
+        VertexAttr::Code Attr = VertexAttr::Invalid;
+        VertexFormat::Code Format = VertexFormat::Invalid;
+        int Offset = 0; // in bytes!
     };
 
     struct PropType { 
@@ -68,9 +43,9 @@ struct IRep {
         std::vector<TextureProperty> Textures;
     };
     struct Mesh {
-        uint32_t BaseVertex = 0;
+        uint32_t FirstVertex = 0;
         uint32_t NumVertices = 0;
-        uint32_t BaseIndex = 0;
+        uint32_t FirstIndex = 0;
         uint32_t NumIndices = 0;
         uint32_t Material = 0;
         glm::vec3 Size;

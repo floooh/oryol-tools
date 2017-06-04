@@ -10,30 +10,28 @@
 #include "ExportUtil/Vertex.h"
 
 struct NVX2Loader {
-    /// the expected vertex layout, only the attributes matter
-    VertexLayout Layout;
-
-    /// append-load an NVX2 mesh file
-    void Load(const std::string& nvx2AssetName, const std::string& n3AssetDir);
-    /// clear the loader
-    void Clear();
-    /// return true if a mesh exists in the loader
-    bool HasMesh(const std::string& nvx2AssetName) const;
-
-    struct Component {
-        Component(VertexAttr::Code attr, VertexFormat::Code src, VertexFormat::Code dst):
-            Attr(attr), SrcFormat(src), DstFormat(dst) { };
-        VertexAttr::Code Attr = VertexAttr::Invalid; 
-        VertexFormat::Code SrcFormat = VertexFormat::Invalid;
-        VertexFormat::Code DstFormat = VertexFormat::Invalid;
-        int SrcOffset = 0;  // in number of bytes
-        int DstOffset = 0;  // in number of bytes
-    };
     struct PrimGroup {
         int FirstVertex = 0;
         int NumVertices = 0;
         int FirstIndex = 0;
         int NumIndices = 0;
+    };
+    struct Component {
+        VertexAttr::Code Attr = VertexAttr::Invalid; 
+        VertexFormat::Code SrcFormat = VertexFormat::Invalid;
+        VertexFormat::Code DstFormat = VertexFormat::Invalid;
+        int SrcOffset = 0;  // in number of bytes
+        int DstOffset = 0;  // in number of bytes
+        
+        Component(VertexAttr::Code attr, VertexFormat::Code src, VertexFormat::Code dst):
+            Attr(attr), SrcFormat(src), DstFormat(dst) { };
+        bool operator==(const Component& rhs) const {
+            return (this->Attr == rhs.Attr) && (this->SrcFormat == rhs.SrcFormat) && (this->DstFormat == rhs.DstFormat) &&
+                   (this->SrcOffset == rhs.SrcOffset) && (this->DstOffset == rhs.DstOffset);
+        };
+        bool operator!=(const Component& rhs) const {
+            return !this->operator==(rhs);
+        };
     };
     struct Mesh {
         std::string Name;
@@ -46,6 +44,23 @@ struct NVX2Loader {
         std::vector<float> VertexData;
         std::vector<uint16_t> IndexData;
     };
+    
+    /// the expected vertex layout, only the attributes matter
+    VertexLayout Layout;
+
+    /// append-load an NVX2 mesh file
+    void Load(const std::string& nvx2AssetName, const std::string& n3AssetDir);
+    /// clear the loader
+    void Clear();
+    /// return true if a mesh exists in the loader
+    bool HasMesh(const std::string& nvx2AssetName) const;
+    /// get mesh by its asset name
+    const Mesh& MeshByName(const std::string& nvx2AssetName) const;
+    /// check that all meshes have identical vertex layouts
+    void ValidateVertexLayouts() const;
+    /// returns a primitive group with absolute base indices
+    PrimGroup AbsPrimGroup(const std::string& nvx2AssetName, int localPrimGroupIndex) const;
+
     std::vector<Mesh> Meshes;
 
     enum N2VertexComponent
