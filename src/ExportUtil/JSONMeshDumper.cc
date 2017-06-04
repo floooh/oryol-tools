@@ -40,9 +40,9 @@ JSONMeshDumper::dumpHeader(cJSON* jsonNode, const Mesh& mesh) {
 
     cJSON* jsonLayout = cJSON_CreateArray();
     cJSON_AddItemToObject(jsonNode, "vertex_layout", jsonLayout);
-    for (int i = 0; i < VertexAttr::NumVertexAttrs; i++) {
+    for (int i = 0; i < VertexAttr::Num; i++) {
         const auto& comp = mesh.VertexBuffer.GetVertexLayout().Components[i];
-        if (comp.Format != VertexFormat::InvalidVertexFormat) {
+        if (comp.Format != VertexFormat::Invalid) {
             VertexAttr::Code attr = (VertexAttr::Code) i;
             cJSON* jsonComp = cJSON_CreateObject();
             cJSON_AddItemToArray(jsonLayout, jsonComp);
@@ -77,7 +77,7 @@ JSONMeshDumper::dumpVertices(cJSON* jsonNode, const Mesh& mesh) {
     for (int vertIndex = 0; vertIndex < numVerts; vertIndex++) {
         cJSON* jsonVertex = cJSON_CreateArray();
         cJSON_AddItemToArray(jsonVertices, jsonVertex);
-        for (int attr = 0; attr < VertexAttr::NumVertexAttrs; attr++) {
+        for (int attr = 0; attr < VertexAttr::Num; attr++) {
             switch (layout.Components[attr].Format) {
                 case VertexFormat::Float4:
                     {

@@ -166,7 +166,7 @@ Config::GetLayout() const {
     if (this->config.contains("Layout")) {
         VertexLayout result;
         auto layout = this->config.get("Layout")->as_table();
-        for (int attrIndex = 0; attrIndex < VertexAttr::NumVertexAttrs; attrIndex++) {
+        for (int attrIndex = 0; attrIndex < VertexAttr::Num; attrIndex++) {
             const std::string& attrName = VertexAttr::ToString((VertexAttr::Code)attrIndex);
             if (layout->contains(attrName)) {
                 auto attr = layout->get(attrName)->as_table();

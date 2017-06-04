@@ -120,6 +120,40 @@ N3JsonDumper::Dump(const N3Loader& n3) {
         cJSON_AddItemToObject(root, "nodes", nodes);
         recurseDumpNode(nodes, n3, 0);
     }
+    if (!n3.nvx2Loader.Meshes.empty()) {
+        cJSON* meshes = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "meshes", meshes);
+        for (const auto& item : n3.nvx2Loader.Meshes) {
+            cJSON* mesh = cJSON_CreateObject();
+            cJSON_AddItemToArray(meshes, mesh);
+            cJSON_AddItemToObject(mesh, "name", cJSON_CreateString(item.Name.c_str()));
+            cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(item.NumVertices));
+            cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(item.NumIndices));
+            cJSON_AddItemToObject(mesh, "src_stride", cJSON_CreateNumber(item.SrcStride));
+            cJSON_AddItemToObject(mesh, "dst_stride", cJSON_CreateNumber(item.DstStride));
+            cJSON* comps = cJSON_CreateArray();
+            cJSON_AddItemToObject(mesh, "components", comps);
+            for (const auto& compItem : item.Components) {
+                cJSON* comp = cJSON_CreateObject();
+                cJSON_AddItemToArray(comps, comp);
+                cJSON_AddItemToObject(comp, "attr", cJSON_CreateString(VertexAttr::ToString(compItem.Attr).c_str()));
+                cJSON_AddItemToObject(comp, "src_format", cJSON_CreateString(VertexFormat::ToString(compItem.SrcFormat).c_str()));
+                cJSON_AddItemToObject(comp, "dst_format", cJSON_CreateString(VertexFormat::ToString(compItem.DstFormat).c_str()));
+                cJSON_AddItemToObject(comp, "src_offset", cJSON_CreateNumber(compItem.SrcOffset));
+                cJSON_AddItemToObject(comp, "dst_offset", cJSON_CreateNumber(compItem.DstOffset));
+            }
+            cJSON* primGroups = cJSON_CreateArray();
+            cJSON_AddItemToObject(mesh, "prim_groups", primGroups);
+            for (const auto& pgItem : item.PrimGroups) {
+                cJSON* primGroup = cJSON_CreateObject();
+                cJSON_AddItemToArray(primGroups, primGroup);
+                cJSON_AddItemToObject(primGroup, "first_vertex", cJSON_CreateNumber(pgItem.FirstVertex));
+                cJSON_AddItemToObject(primGroup, "num_vertices", cJSON_CreateNumber(pgItem.NumVertices));
+                cJSON_AddItemToObject(primGroup, "first_index", cJSON_CreateNumber(pgItem.FirstIndex));
+                cJSON_AddItemToObject(primGroup, "num_indices", cJSON_CreateNumber(pgItem.NumIndices));
+            }
+        }
+    }
     char* rawStr = cJSON_Print(root);
     std::string jsonStr(rawStr);
     free(rawStr);

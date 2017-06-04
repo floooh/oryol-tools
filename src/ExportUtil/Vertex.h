@@ -2,12 +2,12 @@
 //------------------------------------------------------------------------------
 #include <string>
 #include <cassert>
-
-namespace OryolTools {
+#include <vector>
+#include <initializer_list>
 
 //------------------------------------------------------------------------------
 /**
-    @class OryolTool::VertexAttr
+    @class VertexAttr
     @brief vertex attribute enum
 */
 class VertexAttr {
@@ -26,11 +26,11 @@ public:
         Color0,
         Color1,
 
-        NumVertexAttrs,
-        InvalidVertexAttr
+        Num,
+        Invalid,
     };
     static const std::string& ToString(Code c) {
-        static const std::string names[NumVertexAttrs] = {
+        static const std::string names[Num] = {
             "Position",
             "Normal",
             "TexCoord0",
@@ -44,22 +44,22 @@ public:
             "Color0",
             "Color1"
         };
-        assert(c < NumVertexAttrs);
+        assert(c < Num);
         return names[c];
     };
     static Code FromString(const std::string& str) {
-        for (int i = 0; i < NumVertexAttrs; i++) {
+        for (int i = 0; i < Num; i++) {
             if (ToString((Code)i) == str) {
                 return (Code) i;
             }
         }
-        return InvalidVertexAttr;
+        return Invalid;
     };
 };
 
 //------------------------------------------------------------------------------
 /**
-    @class OryolTools::VertexFormat
+    @class VertexFormat
     @brief vertex format enum
 */
 class VertexFormat {
@@ -78,11 +78,11 @@ public:
         Short4,
         Short4N,
 
-        NumVertexFormats,
-        InvalidVertexFormat,
+        Num,
+        Invalid,
     };
     static const std::string& ToString(Code c) {
-        static const std::string names[NumVertexFormats] = {
+        static const std::string names[Num] = {
             "Float",
             "Float2",
             "Float3",
@@ -96,21 +96,21 @@ public:
             "Short4",
             "Short4N"
         };
-        assert(c < NumVertexFormats);
+        assert(c < Num);
         return names[c];
     }
     /// convert from string
     static Code FromString(const std::string& str) {
-        for (int i = 0; i < NumVertexFormats; i++) {
+        for (int i = 0; i < Num; i++) {
             if (ToString((Code)i) == str) {
                 return (Code)i;
             }
         }
-        return InvalidVertexFormat;
+        return Invalid;
     }
     /// get byte size
     static int ByteSize(VertexFormat::Code c) {
-        static const int sizes[NumVertexFormats] = {
+        static const int sizes[Num] = {
             4,      // Float
             8,      // Float2
             12,     // Float3
@@ -124,9 +124,20 @@ public:
             8,      // Short4
             8,      // Short4N
         };
-        assert((c >= 0) && (c < NumVertexFormats));
+        assert((c >= 0) && (c < Num));
         return sizes[c];
     }
+};
+
+//------------------------------------------------------------------------------
+struct VertexComponent {
+    VertexComponent(VertexAttr::Code attr, VertexFormat::Code fmt=VertexFormat::Invalid, float scale=1.0f, float bias=0.0f):
+        Attr(attr), Format(fmt), Scale(scale), Bias(bias) { };
+
+    VertexAttr::Code Attr = VertexAttr::Invalid;
+    VertexFormat::Code Format = VertexFormat::Invalid;
+    float Scale = 1.0f;
+    float Bias = 0.0f;
 };
 
 //------------------------------------------------------------------------------
@@ -136,36 +147,29 @@ public:
 */
 class VertexLayout {
 public:
-    struct Component {
-        VertexFormat::Code Format = VertexFormat::InvalidVertexFormat;
-        float Scale = 1.0f;
-        float Bias = 0.0f;
-    } Components[VertexAttr::NumVertexAttrs];
+    std::vector<VertexComponent> Components;
+
+    /// default constructor
+    VertexLayout() { };
+    /// initialize from a component array
+    VertexLayout(std::initializer_list<VertexComponent> l):
+        Components(l) { };
 
     /// test if the vertex layout has a vertex attribute
-    bool HasAttr(VertexAttr::Code c) const {
-        assert((c >= 0) && (c < VertexAttr::NumVertexAttrs));
-        return this->Components[c].Format != VertexFormat::InvalidVertexFormat;
-    }
-
-    /// get number of valid vertex components
-    int NumValidComponents() const {
-        int num = 0;
-        for (const auto& c : this->Components) {
-            if (c.Format != VertexFormat::InvalidVertexFormat) {
-                num++;
+    bool HasAttr(VertexAttr::Code attr) const {
+        for (const auto& comp : this->Components) {
+            if (comp.Attr == attr) {
+                return true;
             }
         }
-        return num;
+        return false;
     }
 
     /// compute byte size
     int ByteSize() const {
         int size = 0;
-        for (const auto& c : this->Components) {
-            if (c.Format != VertexFormat::InvalidVertexFormat) {
-                size += VertexFormat::ByteSize(c.Format);
-            }
+        for (const auto& comp : this->Components) {
+            size += VertexFormat::ByteSize(comp.Format);
         }
         return size;
     }
@@ -173,18 +177,12 @@ public:
     /// get byte-offset of attr
     int Offset(VertexAttr::Code attr) const {
         int offset = 0;
-        for (int i = 0; i < VertexAttr::NumVertexAttrs; i++) {
-            if (i < attr) {
-                if (this->Components[i].Format != VertexFormat::InvalidVertexFormat) {
-                    offset += VertexFormat::ByteSize(this->Components[i].Format);
-                }
-            }
-            else {
+        for (const auto& comp : this->Components) {
+            if (comp.Attr == attr) {
                 break;
             }
+            offset += VertexFormat::ByteSize(comp.Format);
         }
         return offset;
     }
 };
-
-} // namespace OryolTools

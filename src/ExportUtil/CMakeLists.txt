@@ -7,7 +7,7 @@ fips_begin_lib(ExportUtil)
         Config.cc Config.h
         Vertex.h
         IndexBuffer.cc IndexBuffer.h
-        VertexWriter.cc VertexWriter.h
+        VertexCodec.cc VertexCodec.h
         VertexBuffer.cc VertexBuffer.h
         Mesh.h
         PrimitiveGroup.h

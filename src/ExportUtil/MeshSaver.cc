@@ -30,13 +30,13 @@ MeshSaver::Save(const Mesh& mesh, FILE* fp) {
     size += write32(fp, layout.ByteSize());
     size += write32(fp, mesh.IndexBuffer.GetNumIndices());
     size += write32(fp, mesh.IndexBuffer.GetIndexSize());
-    size += write32(fp, layout.NumValidComponents());
+    size += write32(fp, layout.Components.size());
     size += write32(fp, mesh.PrimGroups.size());
 
     // write vertex layout
-    for (uint32_t attr = 0; attr < VertexAttr::NumVertexAttrs; attr++) {
+    for (uint32_t attr = 0; attr < VertexAttr::Num; attr++) {
         const auto& comp = layout.Components[attr];
-        if (VertexFormat::InvalidVertexFormat != comp.Format) {
+        if (VertexFormat::Invalid != comp.Format) {
             size += write32(fp, attr);
             size += write32(fp, comp.Format);
         }

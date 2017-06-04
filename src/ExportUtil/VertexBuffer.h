@@ -1,13 +1,11 @@
 #pragma once
 //------------------------------------------------------------------------------
 /**
-    @class OryolTools::VertexBuffer
+    @class VertexBuffer
     @brief holds exported vertex data
 */
 #include "ExportUtil/Vertex.h"
 #include <cstdint>
-
-namespace OryolTools {
 
 class VertexBuffer {
 public:
@@ -41,5 +39,3 @@ private:
     int allNumVertices = 0;
     std::uint8_t* buffer = nullptr;
 };
-
-} // namespace OryolTools

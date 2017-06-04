@@ -2,12 +2,10 @@
 //  VertexBuffer.cc
 //------------------------------------------------------------------------------
 #include "VertexBuffer.h"
-#include "ExportUtil/VertexWriter.h"
+#include "ExportUtil/VertexCodec.h"
 #include <cstdlib>
 
 using namespace std;
-
-namespace OryolTools {
 
 //------------------------------------------------------------------------------
 VertexBuffer::~VertexBuffer() {
@@ -87,7 +85,7 @@ VertexBuffer::write(VertexAttr::Code attr,
     const int dstStride = this->layout.ByteSize();
     const float scale = this->layout.Components[attr].Scale;
     for (int i = 0; i < numVerts; i++) {
-        VertexWriter::Write<FORMAT>(dstPtr, scale, input, numInputComps);
+        VertexCodec::Encode<FORMAT>(dstPtr, scale, input, numInputComps);
         dstPtr += dstStride;
         input += inputStride;
     }
@@ -108,7 +106,7 @@ VertexBuffer::Write(VertexAttr::Code attr,
     assert(nullptr != input);
     assert((numInputComps >= 1) && (numInputComps <= 4));
     assert(inputStride > 0);
-    assert(VertexFormat::InvalidVertexFormat != this->layout.Components[attr].Format);
+    assert(VertexFormat::Invalid != this->layout.Components[attr].Format);
 
     const int vertexByteSize = this->layout.ByteSize();
     const int compOffset = this->layout.Offset(attr);
@@ -155,5 +153,3 @@ VertexBuffer::Write(VertexAttr::Code attr,
             break;
     }
 }
-
-} // namespace OryolTools

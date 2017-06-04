@@ -3,31 +3,12 @@
 //------------------------------------------------------------------------------
 #include "N3Loader.h"
 #include "ExportUtil/Log.h"
+#include "Util.h"
 #include "pystring.h"
 #include <stdio.h>
 #include <set>
 
 using namespace OryolTools;
-
-//------------------------------------------------------------------------------
-template<typename TYPE> TYPE read(FILE* fp) {
-    TYPE val;
-    int bytesRead = fread(&val, 1, sizeof(val), fp);
-    Log::FailIf(bytesRead != sizeof(val), "File read error.");
-    return val;
-};
-
-//------------------------------------------------------------------------------
-template<> std::string read<std::string>(FILE* fp) {
-    uint16_t len = read<uint16_t>(fp);
-    Log::FailIf(len > 4096, "Long string in file.");
-    std::string str;
-    str.reserve(len);
-    for (uint16_t i = 0; i < len; i++) {
-        str.push_back(read<char>(fp));
-    }
-    return str;
-}
 
 //------------------------------------------------------------------------------
 void
@@ -429,47 +410,21 @@ N3Loader::ParseCharacterSkinNodeTag(FILE* fp, uint32_t tag) {
 }
 
 //------------------------------------------------------------------------------
-#pragma pack(push, 1)
-struct Nvx2Header {
-    uint32_t Magic = 0;
-    uint32_t NumGroups = 0;
-    uint32_t NumVertices = 0;
-    uint32_t VertexWidth = 0;
-    uint32_t NumTriangles = 0;
-    uint32_t NumEdges = 0;
-    uint32_t VertexComponentMask = 0;
-};
-struct Nvx2Group {
-    uint32_t FirstVertex = 0;
-    uint32_t NumVertices = 0;
-    uint32_t FirstTriangle = 0;
-    uint32_t NumTriangles = 0;
-    uint32_t FirstEgde = 0;
-    uint32_t NumEdges = 0;
-};
-#pragma pack(pop)
-
 void
 N3Loader::LoadMeshes(const std::string& n3AssetDir) {
+    VertexLayout layout({
+        { VertexAttr::Position, VertexFormat::Float3 },
+        { VertexAttr::Normal, VertexFormat::Float3 },
+        { VertexAttr::TexCoord0, VertexFormat::Float2 }
+    });
+    this->nvx2Loader.Clear();
+    this->nvx2Loader.Layout = layout;
 
     // for each node with mesh data...
-    std::set<std::string> loadedMeshes;
     for (const auto& node : this->Nodes) {
         if (node.Mesh.empty()) {
-            continue;   // no mesh in this node
+            continue;
         }
-        if (loadedMeshes.find(node.Mesh) != loadedMeshes.end()) {
-            continue;   // mesh already loaded, skip this node
-        }
-        loadedMeshes.insert(node.Mesh);
-        std::string meshPath = n3AssetDir + "/meshes/" + node.Mesh;
-        FILE* fp = fopen(meshPath.c_str(), "rb");
-        Log::FailIf(!fp, "Failed to open mesh file '%s'\n", meshPath.c_str());
-
-        // load header data
-        Nvx2Header hdr = read<Nvx2Header>(fp);
-        Log::FailIf(hdr.Magic != 'NVX2', "Magic number mismatch in '%s'\n", meshPath.c_str());
-
-        fclose(fp);
+        this->nvx2Loader.Load(node.Mesh, n3AssetDir);
     }
 }

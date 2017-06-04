@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <glm/vec4.hpp>
 #include "IRep.h"
+#include "NVX2Loader.h"
 
 struct N3Loader {
     /// load a file into intermediate representation
@@ -76,5 +77,6 @@ struct N3Loader {
     std::string ModelName;
     std::vector<N3Node> Nodes;
     std::vector<int> NodeIndexStack;
+    NVX2Loader nvx2Loader;
 };
 
