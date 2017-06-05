@@ -131,6 +131,7 @@ IRepJsonDumper::Dump(const IRep& irep) {
             }
         }
     }
+
     char* rawStr = cJSON_Print(root);
     std::string jsonStr(rawStr);
     free(rawStr);

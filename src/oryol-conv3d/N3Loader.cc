@@ -532,4 +532,29 @@ N3Loader::ToIRep(IRep& irep) {
             }
         }
     }
+
+    // copy over vertices
+    const int numVertices = this->nvx2Loader.NumVertices();
+    /// FIXME: need to fix this! need to separate between mesh and element range!
+    Log::FailIf(numVertices >= (1<<16)-1, "Too many vertices in mesh (>64k)!");
+
+    const int numIndices = this->nvx2Loader.NumIndices();
+    const int vertexStride = this->nvx2Loader.VertexStride();
+    const int numVertexFloats = (numVertices * vertexStride) / sizeof(float);
+    irep.VertexData.resize(numVertexFloats);
+    irep.IndexData.resize(numIndices);
+    int curVxIndex = 0;
+    int curIxIndex = 0;
+    int meshBaseIndex = 0;
+    for (const auto& nvx2Mesh : this->nvx2Loader.Meshes) {
+        for (float val : nvx2Mesh.VertexData) {
+            irep.VertexData[curVxIndex++] = val;
+        }
+        for (uint16_t val : nvx2Mesh.IndexData) {
+            irep.IndexData[curIxIndex++] = val + meshBaseIndex;
+        }
+        meshBaseIndex += nvx2Mesh.NumVertices;
+    }
+    Log::FailIf(curVxIndex != (int)irep.VertexData.size(), "Vertex data size mismatch");
+    Log::FailIf(curIxIndex != (int)irep.IndexData.size(), "Index data size mismatch");
 }

@@ -19,6 +19,8 @@ int main(int argc, const char** argv) {
     args.AddString("-outdir", "optional output asset root directory", "");
     args.AddBool("-dumpin", "dump input file info to JSON");
     args.AddBool("-dumpout", "dump output file info to JSON");
+    args.AddBool("-dumpvtx", "dump intermediate representation vertex data");
+    args.AddBool("-dumpidx", "dump intermediate representation index data");
     args.AddString("-n3dir", "N3 asset root directory (when loading .n3 file)", "");
     if (!args.Parse(argc, argv)) {
         Log::Fatal("Failed to parse args\n");
@@ -46,10 +48,34 @@ int main(int argc, const char** argv) {
         }
     }
 
-    // dump intermediate representation to JSON?
+    // dump intermediate representation
     if (args.HasArg("-dumpout")) {
         std::string json = IRepJsonDumper::Dump(irep);
         Log::Info("%s\n", json.c_str());
     }
+    if (args.HasArg("-dumpvtx")) {
+        int stride = 0;
+        for (const auto& comp : irep.VertexComponents) {
+            stride += VertexFormat::ByteSize(comp.Format) / sizeof(float);
+        }
+        Log::FailIf((irep.VertexData.size() % stride) != 0, "Vertex data size isn't multiple of vertex stride!\n");
+        const int numVertices = irep.VertexData.size() / stride;
+        for (int i = 0; i < numVertices; i++) {
+            Log::Info("%d: ", i);
+            for (int j = 0; j < stride; j++) {
+                Log::Info("%.4f ", irep.VertexData[i * stride + j]);
+            }
+            Log::Info("\n");
+        }
+        Log::Info("\n");
+    }
+    if (args.HasArg("-dumpidx")) {
+        Log::FailIf((irep.IndexData.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
+        const int numTris = irep.IndexData.size() / 3;
+        for (int i = 0; i < numTris; i++) {
+            Log::Info("%d: %d %d %d\n", i, irep.IndexData[i*3+0], irep.IndexData[i*3+1], irep.IndexData[i*3+2]);
+        }
+    }
+
     return 0;
 }

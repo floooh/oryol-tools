@@ -171,7 +171,7 @@ VertexCodec::Encode<VertexFormat::Short2>(uint8_t* dst, float scale, const float
 //------------------------------------------------------------------------------
 template<> void
 VertexCodec::Decode<VertexFormat::Short2>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
-    const int16_t* p = (const int16_t*) dst;
+    const int16_t* p = (const int16_t*) src;
     for (int i = 0; i < 2; i++) {
         *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
     }
@@ -192,7 +192,7 @@ VertexCodec::Encode<VertexFormat::Short2N>(uint8_t* dst, float scale, const floa
 template<> void
 VertexCodec::Decode<VertexFormat::Short2N>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
     scale *= 32767.0f;
-    const int16_t* p = (const int16_t*) dst;
+    const int16_t* p = (const int16_t*) src;
     for (int i = 0; i < 2; i++) {
         *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
     }

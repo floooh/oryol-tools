@@ -114,9 +114,9 @@ struct IRep {
     std::vector<Node> Nodes;
     std::vector<KeyComponent> KeyComponents;
     std::vector<AnimClip> AnimClips;
-    std::vector<float> Vertices;
-    std::vector<uint16_t> Indices;
-    std::vector<float> Keys;
+    std::vector<float> VertexData;
+    std::vector<uint16_t> IndexData;
+    std::vector<float> KeyData;
     
     int MaterialIndex(const std::string& name) const {
         for (int i = 0; i < int(Materials.size()); i++) {

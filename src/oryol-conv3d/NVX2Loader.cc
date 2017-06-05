@@ -79,6 +79,36 @@ NVX2Loader::AbsPrimGroup(const std::string& nvx2AssetName, int localPrimGroupInd
     return primGroup;
 }
 
+//------------------------------------------------------------------------------
+int
+NVX2Loader::NumVertices() const {
+    int numVertices = 0;
+    for (const auto& mesh : this->Meshes) {
+        numVertices += mesh.NumVertices;
+    }
+    return numVertices;
+}
+
+//------------------------------------------------------------------------------
+int
+NVX2Loader::NumIndices() const {
+    int numIndices = 0;
+    for (const auto& mesh : this->Meshes) {
+        numIndices += mesh.NumIndices;
+    }
+    return numIndices;
+}
+
+//------------------------------------------------------------------------------
+int
+NVX2Loader::VertexStride() const {
+    if (!this->Meshes.empty()) {
+        return this->Meshes[0].DstStride;
+    }
+    else {
+        return 0;
+    }
+}
 
 //------------------------------------------------------------------------------
 void
@@ -87,11 +117,13 @@ NVX2Loader::ValidateVertexLayouts() const {
         return;
     }
     const std::vector<Component>& comps = this->Meshes[0].Components;
+    const int dstStride = this->Meshes[0].DstStride;
     for (const auto& mesh : this->Meshes) {
         Log::FailIf(comps.size() != mesh.Components.size(), "NVX2Loader: meshes have different vertex layout!\n");
         for (int i = 0; i < (int)comps.size(); i++) {
             Log::FailIf(comps[i] != mesh.Components[i], "NVX2Loader: meshes have different vertex layout!\n");
         }
+        Log::FailIf(mesh.DstStride != dstStride, "NVX2Loader: meshes have different vertex layoyt!\n");
     }
 }
 
@@ -157,7 +189,7 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
     }
 
     // decode vertices
-    mesh.VertexData.resize(mesh.NumVertices * mesh.DstStride);
+    mesh.VertexData.resize((mesh.NumVertices * mesh.DstStride) / sizeof(float));
     const uint8_t* vxSrcPtr = start+sizeof(Nvx2Header)+nvx2Hdr->NumGroups*sizeof(Nvx2Group);
     float* vxDstPtr = &(mesh.VertexData[0]);
     const float* vxDstEndPtr = &(*mesh.VertexData.end());
@@ -188,7 +220,7 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
                     VertexCodec::Decode<VertexFormat::UByte4>(dst, 1.0f, src, 4);
                     break;
                 case VertexFormat::Short2:
-                    VertexCodec::Decode<VertexFormat::Short2>(dst, 1.0f/4096.0f, src, 2);
+                    VertexCodec::Decode<VertexFormat::Short2>(dst, 1.0f/8192.0f, src, 2);
                     break;
                 default:
                     break;

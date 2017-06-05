@@ -45,7 +45,7 @@ struct NVX2Loader {
         std::vector<uint16_t> IndexData;
     };
     
-    /// the expected vertex layout, only the attributes matter
+    /// in: the expected vertex layout, only the attributes matter
     VertexLayout Layout;
 
     /// append-load an NVX2 mesh file
@@ -60,6 +60,12 @@ struct NVX2Loader {
     void ValidateVertexLayouts() const;
     /// returns a primitive group with absolute base indices
     PrimGroup AbsPrimGroup(const std::string& nvx2AssetName, int localPrimGroupIndex) const;
+    /// return overall number of vertices
+    int NumVertices() const;
+    /// return overall number of indices
+    int NumIndices() const;
+    /// return the vertex stride in number of bytes
+    int VertexStride() const;
 
     std::vector<Mesh> Meshes;
 
