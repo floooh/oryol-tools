@@ -63,9 +63,9 @@ struct N3Loader {
         std::string Animation;
         struct Joint {
             int Parent = -1;
-            glm::vec4 PoseTranslation;
-            glm::vec4 PoseRotation;
-            glm::vec4 PoseScale;
+            glm::vec4 PoseTranslation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            glm::vec4 PoseRotation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);;
+            glm::vec4 PoseScale = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
             std::string Name;
         };
         std::vector<Joint> Joints;

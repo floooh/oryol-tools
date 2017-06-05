@@ -136,9 +136,9 @@ N3JsonDumper::Dump(const N3Loader& n3) {
             for (const auto& compItem : item.Components) {
                 cJSON* comp = cJSON_CreateObject();
                 cJSON_AddItemToArray(comps, comp);
-                cJSON_AddItemToObject(comp, "attr", cJSON_CreateString(VertexAttr::ToString(compItem.Attr).c_str()));
-                cJSON_AddItemToObject(comp, "src_format", cJSON_CreateString(VertexFormat::ToString(compItem.SrcFormat).c_str()));
-                cJSON_AddItemToObject(comp, "dst_format", cJSON_CreateString(VertexFormat::ToString(compItem.DstFormat).c_str()));
+                cJSON_AddItemToObject(comp, "attr", cJSON_CreateString(VertexAttr::ToString(compItem.Attr)));
+                cJSON_AddItemToObject(comp, "src_format", cJSON_CreateString(VertexFormat::ToString(compItem.SrcFormat)));
+                cJSON_AddItemToObject(comp, "dst_format", cJSON_CreateString(VertexFormat::ToString(compItem.DstFormat)));
                 cJSON_AddItemToObject(comp, "src_offset", cJSON_CreateNumber(compItem.SrcOffset));
                 cJSON_AddItemToObject(comp, "dst_offset", cJSON_CreateNumber(compItem.DstOffset));
             }

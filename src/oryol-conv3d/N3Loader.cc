@@ -444,15 +444,41 @@ N3Loader::ToIRep(IRep& irep) {
         irep.VertexComponents.push_back(dstComp);
     }
 
-    // each N3 node with a shader becomes one Material and 1..N Meshes
+    // handle character-specific stuff, and check if this is a character
+    bool isCharacter = false;
+    for (const auto& n3Node : this->Nodes) {
+        if (!n3Node.Joints.empty()) {
+            isCharacter = true;
+        }
+    }
+
+    // each N3 node with a shader becomes one Material and 1..N Meshes,
+    // for each N3 mesh, generate a top level transform node which
+    // references all IRep meshes (which are basically primitive groups)
     char strBuffer[4096];
+    std::string curMeshName;
     for (int nodeIndex = 0; nodeIndex < (int)this->Nodes.size(); nodeIndex++) {
         const auto& n3Node = this->Nodes[nodeIndex];
         if (!n3Node.Shader.empty() && !n3Node.Mesh.empty()) {
-            irep.Materials.push_back(IRep::Material());
-            auto& mat = irep.Materials.back();
+            // setup new IRep node if the mesh name differs
+            if (n3Node.Mesh != curMeshName) {
+                curMeshName = n3Node.Mesh;
+                irep.Nodes.push_back(IRep::Node());
+                auto& node = irep.Nodes.back();
+                // if we are a character, use the skin name, which is 2 nodes up,
+                // otherwise use the parent's name
+                if (isCharacter) {
+                    int grandParentIndex = this->Nodes[n3Node.Parent].Parent;
+                    node.Name = this->Nodes[grandParentIndex].Name;
+                }
+                else {
+                    node.Name = this->Nodes[n3Node.Parent].Name;
+                }
+            }
 
             // setup material
+            irep.Materials.push_back(IRep::Material());
+            auto& mat = irep.Materials.back();
             std::snprintf(strBuffer, sizeof(strBuffer), "mat%d", nodeIndex);
             mat.Name = strBuffer;
             mat.Shader = n3Node.Shader;
@@ -487,6 +513,7 @@ N3Loader::ToIRep(IRep& irep) {
                 mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
                 mesh.NumIndices = nvx2PrimGroup.NumIndices;
                 mesh.Material = irep.Materials.size() - 1;
+                irep.Nodes.back().Meshes.push_back(irep.Meshes.size());
                 irep.Meshes.push_back(mesh);
             }
             else {
@@ -498,12 +525,11 @@ N3Loader::ToIRep(IRep& irep) {
                     mesh.NumVertices = nvx2PrimGroup.NumVertices;
                     mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
                     mesh.NumIndices = nvx2PrimGroup.NumIndices;
+                    mesh.Material = irep.Materials.size() - 1;
+                    irep.Nodes.back().Meshes.push_back(irep.Meshes.size());
                     irep.Meshes.push_back(mesh);
                 }
             }
         }
     }
-
-
-
 }

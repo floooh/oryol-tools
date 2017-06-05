@@ -25,6 +25,15 @@ struct IRep {
             Float4, 
             Invalid 
         };
+        static const char* ToString(PropType::Enum t) {
+            switch (t) {
+                case Float: return "Float";
+                case Float2: return "Float2";
+                case Float3: return "Float3";
+                case Float4: return "Float4";
+                default: return "Invalid";
+            }
+        }
     };
 
     struct ValueProperty {
@@ -53,17 +62,17 @@ struct IRep {
     struct Bone {
         std::string Name;
         int32_t Parent = -1;
-        glm::vec3 Position;
-        glm::vec3 Scaling;
-        glm::vec4 Rotation;
+        glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 Scaling = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec4 Rotation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     };
     struct Node {
         std::string Name;
         int32_t Parent = -1;
         std::vector<uint32_t> Meshes;
-        glm::vec3 Position;
-        glm::vec3 Scaling;
-        glm::vec4 Rotation;
+        glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 Scaling = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec4 Rotation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     };
     struct KeyType {
         enum Enum {
@@ -74,6 +83,16 @@ struct IRep {
             Quaternion,
             Invalid
         };
+        static const char* ToString(Enum t) {
+            switch (t) {
+                case Float: return "Float";
+                case Float2: return "Float2";
+                case Float3: return "Float3";
+                case Float4: return "Float4";
+                case Quaternion: return "Quaternion";
+                default: return "Invalid";
+            }
+        }
     };
     struct KeyComponent {
         KeyType::Enum Type = KeyType::Invalid;

@@ -6,6 +6,7 @@
 #include "pystring.h"
 #include "N3Loader.h"
 #include "N3JsonDumper.h"
+#include "IRepJsonDumper.h"
 
 using namespace OryolTools;
 
@@ -45,5 +46,10 @@ int main(int argc, const char** argv) {
         }
     }
 
+    // dump intermediate representation to JSON?
+    if (args.HasArg("-dumpout")) {
+        std::string json = IRepJsonDumper::Dump(irep);
+        Log::Info("%s\n", json.c_str());
+    }
     return 0;
 }

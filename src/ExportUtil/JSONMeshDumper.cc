@@ -46,8 +46,8 @@ JSONMeshDumper::dumpHeader(cJSON* jsonNode, const Mesh& mesh) {
             VertexAttr::Code attr = (VertexAttr::Code) i;
             cJSON* jsonComp = cJSON_CreateObject();
             cJSON_AddItemToArray(jsonLayout, jsonComp);
-            cJSON_AddItemToObject(jsonComp, "attr", cJSON_CreateString(VertexAttr::ToString(attr).c_str()));
-            cJSON_AddItemToObject(jsonComp, "format", cJSON_CreateString(VertexFormat::ToString(comp.Format).c_str()));
+            cJSON_AddItemToObject(jsonComp, "attr", cJSON_CreateString(VertexAttr::ToString(attr)));
+            cJSON_AddItemToObject(jsonComp, "format", cJSON_CreateString(VertexFormat::ToString(comp.Format)));
         }
     }
 

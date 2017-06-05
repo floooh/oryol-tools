@@ -29,27 +29,26 @@ public:
         Num,
         Invalid,
     };
-    static const std::string& ToString(Code c) {
-        static const std::string names[Num] = {
-            "Position",
-            "Normal",
-            "TexCoord0",
-            "TexCoord1",
-            "TexCoord2",
-            "TexCoord3",
-            "Tangent",
-            "Binormal",
-            "Weights",
-            "Indices",
-            "Color0",
-            "Color1"
+    static const char* ToString(Code c) {
+        switch (c) {
+            case Position: return "Position";
+            case Normal: return "Normal";
+            case TexCoord0: return "TexCoord0";
+            case TexCoord1: return "TexCoord1";
+            case TexCoord2: return "TexCoord2";
+            case TexCoord3: return "TexCoord3";
+            case Tangent: return "Tangent";
+            case Binormal: return "Binormal";
+            case Weights: return "Weights";
+            case Indices: return "Indices";
+            case Color0: return "Color0";
+            case Color1: return "Color1";
+            default: return "Invalid";
         };
-        assert(c < Num);
-        return names[c];
     };
     static Code FromString(const std::string& str) {
         for (int i = 0; i < Num; i++) {
-            if (ToString((Code)i) == str) {
+            if (str == ToString((Code)i)) {
                 return (Code) i;
             }
         }
@@ -81,28 +80,27 @@ public:
         Num,
         Invalid,
     };
-    static const std::string& ToString(Code c) {
-        static const std::string names[Num] = {
-            "Float",
-            "Float2",
-            "Float3",
-            "Float4",
-            "Byte4",
-            "Byte4N",
-            "UByte4",
-            "UByte4N",
-            "Short2",
-            "Short2N",
-            "Short4",
-            "Short4N"
+    static const char* ToString(Code c) {
+        switch (c) {
+            case Float: return "Float";
+            case Float2: return "Float2";
+            case Float3: return "Float3";
+            case Float4: return "Float4";
+            case Byte4: return "Byte4";
+            case Byte4N: return "Byte4N";
+            case UByte4: return "UByte4";
+            case UByte4N: return "UByte4N";
+            case Short2: return "Short2";
+            case Short2N: return "Short2N";
+            case Short4: return "Short4";
+            case Short4N: return "Short4N";
+            default: return "Invalid";
         };
-        assert(c < Num);
-        return names[c];
     }
     /// convert from string
     static Code FromString(const std::string& str) {
         for (int i = 0; i < Num; i++) {
-            if (ToString((Code)i) == str) {
+            if (str == ToString((Code)i)) {
                 return (Code)i;
             }
         }

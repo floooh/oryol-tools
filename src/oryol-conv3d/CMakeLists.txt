@@ -5,6 +5,7 @@ fips_begin_app(oryol-conv3d cmdline)
         N3Loader.h N3Loader.cc
         NVX2Loader.h NVX2Loader.cc
         N3JsonDumper.h N3JsonDumper.cc
+        IRepJsonDumper.h IRepJsonDumper.cc
     )
     fips_deps(ExportUtil assimp pystring cjson)
 fips_end_app()
