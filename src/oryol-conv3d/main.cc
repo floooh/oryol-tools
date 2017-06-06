@@ -7,6 +7,7 @@
 #include "N3Loader.h"
 #include "N3JsonDumper.h"
 #include "IRepJsonDumper.h"
+#include "OrbSaver.h"
 
 using namespace OryolTools;
 
@@ -14,7 +15,7 @@ int main(int argc, const char** argv) {
     CmdLineArgs args;
     args.AddBool("-help", "show help");
     args.AddString("-in", "input file or asset name (.n3, .fbx)", "");
-    args.AddString("-out", "output filename or path", "out.orl");
+    args.AddString("-out", "output filename or path", "out.orb");
     args.AddString("-indir", "optional asset root directory", "");
     args.AddString("-outdir", "optional output asset root directory", "");
     args.AddBool("-dumpin", "dump input file info to JSON");
@@ -47,6 +48,10 @@ int main(int argc, const char** argv) {
             Log::Info("%s\n", json.c_str());
         }
     }
+
+    // save intermediate representation to output file
+    OrbSaver orbSaver;
+    orbSaver.Save(args.GetString("-out"), irep);
 
     // dump intermediate representation
     if (args.HasArg("-dumpout")) {

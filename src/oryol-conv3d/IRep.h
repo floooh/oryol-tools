@@ -19,7 +19,7 @@ struct IRep {
 
     struct PropType { 
         enum Enum {
-            Float, 
+            Float = 0, 
             Float2, 
             Float3, 
             Float4, 
@@ -33,6 +33,9 @@ struct IRep {
                 case Float4: return "Float4";
                 default: return "Invalid";
             }
+        }
+        static int NumFloats(PropType::Enum t) {
+            return (t == Invalid) ? 0 : t+1;
         }
     };
 
@@ -119,11 +122,56 @@ struct IRep {
     std::vector<float> KeyData;
     
     int MaterialIndex(const std::string& name) const {
-        for (int i = 0; i < int(Materials.size()); i++) {
+        for (size_t i = 0; i < this->Materials.size(); i++) {
             if (name == this->Materials[i].Name) {
-                return i;
+                return (int)i;
             }
         }
         return -1;
     };
+    int VertexStrideBytes() const {
+        // number of bytes(!) from one vertex to next
+        int stride = 0;
+        for (const auto& comp : this->VertexComponents) {
+            stride += VertexFormat::ByteSize(comp.Format);
+        }
+        return stride;
+    }
+    int NumMeshVertices() const {
+        int num = 0;
+        for (const auto& mesh : this->Meshes) {
+            num += mesh.NumVertices;
+        }
+        return num;
+    }
+    int NumValueProps() const {
+        size_t num = 0;
+        for (const auto& mat : this->Materials) {
+            num += mat.Values.size();
+        }
+        return (int)num;
+    };
+    int NumPropValues() const {
+        size_t num = 0;
+        for (const auto& mat : this->Materials) {
+            for (const auto& prop : mat.Values) {
+                num += PropType::NumFloats(prop.Type); 
+            }
+        }
+        return num;
+    };
+    int NumTextureProps() const {
+        size_t num = 0;
+        for (const auto& mat : this->Materials) {
+            num += mat.Textures.size();
+        }
+        return (int)num;
+    }
+    int NumAnimCurves() const {
+        size_t num = 0;
+        for (const auto& clip : this->AnimClips) {
+            num += clip.Curves.size();
+        }
+        return (int)num;
+    }
 };

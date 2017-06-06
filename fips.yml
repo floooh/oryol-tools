@@ -15,4 +15,7 @@ imports:
         git: https://github.com/floooh/fips-spirvcross.git
     fips-pystring:
         git: https://github.com/floooh/fips-pystring.git
+    oryol-fileformats:
+        git: https://github.com/floooh/oryol-fileformats.git
+
 
