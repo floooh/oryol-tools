@@ -52,22 +52,6 @@ IRepJsonDumper::Dump(const IRep& irep) {
         }
     }
 
-    // meshes
-    if (!irep.Meshes.empty()) {
-        cJSON* meshes = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "meshes", meshes);
-        for (const auto& item : irep.Meshes) {
-            cJSON* mesh = cJSON_CreateObject();
-            cJSON_AddItemToArray(meshes, mesh);
-            cJSON_AddItemToObject(mesh, "material", cJSON_CreateNumber(item.Material));
-            cJSON_AddItemToObject(mesh, "first_vertex", cJSON_CreateNumber(item.FirstVertex));
-            cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(item.NumVertices));
-            cJSON_AddItemToObject(mesh, "first_index", cJSON_CreateNumber(item.FirstIndex));
-            cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(item.NumIndices));
-            cJSON_AddItemToObject(mesh, "size", cJSON_CreateFloatArray(&item.Size.x, 3));
-        }
-    }
-
     // bones
     if (!irep.Bones.empty()) {
         cJSON* bones = cJSON_CreateArray();
@@ -77,9 +61,9 @@ IRepJsonDumper::Dump(const IRep& irep) {
             cJSON_AddItemToArray(bones, bone);
             cJSON_AddItemToObject(bone, "name", cJSON_CreateString(item.Name.c_str()));
             cJSON_AddItemToObject(bone, "parent", cJSON_CreateNumber(item.Parent));
-            cJSON_AddItemToObject(bone, "pose_translate", cJSON_CreateFloatArray(&item.Position.x, 3));
-            cJSON_AddItemToObject(bone, "pose_rotate", cJSON_CreateFloatArray(&item.Rotation.x, 4));
-            cJSON_AddItemToObject(bone, "pose_scale", cJSON_CreateFloatArray(&item.Scaling.x, 3));
+            cJSON_AddItemToObject(bone, "translate", cJSON_CreateFloatArray(&item.Translate.x, 3));
+            cJSON_AddItemToObject(bone, "rotate", cJSON_CreateFloatArray(&item.Rotate.x, 4));
+            cJSON_AddItemToObject(bone, "scale", cJSON_CreateFloatArray(&item.Scale.x, 3));
         }
     }
 
@@ -92,11 +76,22 @@ IRepJsonDumper::Dump(const IRep& irep) {
             cJSON_AddItemToArray(nodes, node);
             cJSON_AddItemToObject(node, "name", cJSON_CreateString(item.Name.c_str()));
             cJSON_AddItemToObject(node, "parent", cJSON_CreateNumber(item.Parent));
-            cJSON_AddItemToObject(node, "translate", cJSON_CreateFloatArray(&item.Position.x, 3));
-            cJSON_AddItemToObject(node, "rotate", cJSON_CreateFloatArray(&item.Rotation.x, 4));
-            cJSON_AddItemToObject(node, "scale", cJSON_CreateFloatArray(&item.Scaling.x, 3));
+            cJSON_AddItemToObject(node, "translate", cJSON_CreateFloatArray(&item.Translate.x, 3));
+            cJSON_AddItemToObject(node, "rotate", cJSON_CreateFloatArray(&item.Rotate.x, 4));
+            cJSON_AddItemToObject(node, "scale", cJSON_CreateFloatArray(&item.Scale.x, 3));
             if (!item.Meshes.empty()) {
-                cJSON_AddItemToObject(node, "meshes", cJSON_CreateIntArray((const int*)&item.Meshes[0], item.Meshes.size()));
+                cJSON* meshes = cJSON_CreateArray();
+                cJSON_AddItemToObject(node, "meshes", meshes);
+                for (const auto& meshItem : item.Meshes) {
+                    cJSON* mesh = cJSON_CreateObject();
+                    cJSON_AddItemToArray(meshes, mesh);
+                    cJSON_AddItemToObject(mesh, "material", cJSON_CreateNumber(meshItem.Material));
+                    cJSON_AddItemToObject(mesh, "first_vertex", cJSON_CreateNumber(meshItem.FirstVertex));
+                    cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(meshItem.NumVertices));
+                    cJSON_AddItemToObject(mesh, "first_index", cJSON_CreateNumber(meshItem.FirstIndex));
+                    cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(meshItem.NumIndices));
+                    cJSON_AddItemToObject(mesh, "size", cJSON_CreateFloatArray(&meshItem.Size.x, 3));
+                }
             }
         }
     }

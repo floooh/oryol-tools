@@ -442,6 +442,7 @@ N3Loader::ToIRep(IRep& irep) {
         dstComp.Format = srcComp.DstFormat;
         dstComp.Offset = srcComp.DstOffset;
         irep.VertexComponents.push_back(dstComp);
+        Log::FailIf(VertexFormat::IsPacked(dstComp.Format), "IRep vertices must not be packed!\n");
     }
 
     // handle character-specific stuff, and check if this is a character
@@ -513,8 +514,7 @@ N3Loader::ToIRep(IRep& irep) {
                 mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
                 mesh.NumIndices = nvx2PrimGroup.NumIndices;
                 mesh.Material = irep.Materials.size() - 1;
-                irep.Nodes.back().Meshes.push_back(irep.Meshes.size());
-                irep.Meshes.push_back(mesh);
+                irep.Nodes.back().Meshes.push_back(mesh);
             }
             else {
                 // one mesh per skin fragment
@@ -526,8 +526,7 @@ N3Loader::ToIRep(IRep& irep) {
                     mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
                     mesh.NumIndices = nvx2PrimGroup.NumIndices;
                     mesh.Material = irep.Materials.size() - 1;
-                    irep.Nodes.back().Meshes.push_back(irep.Meshes.size());
-                    irep.Meshes.push_back(mesh);
+                    irep.Nodes.back().Meshes.push_back(mesh);
                 }
             }
         }

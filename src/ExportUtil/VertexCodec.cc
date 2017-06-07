@@ -5,10 +5,11 @@
 #include "glm/glm.hpp"
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Float>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     float* p = (float*) dst;
-    *p = *src * scale;
+    *p++ = *src * scale;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -19,12 +20,13 @@ VertexCodec::Decode<VertexFormat::Float>(float* dst, float scale, const uint8_t*
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Float2>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     float* p = (float*) dst;
     for (int i = 0; i < 2; i++) {
         *p++ = (numSrcComps > i) ? src[i] * scale : 0.0f;
     }
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -37,12 +39,13 @@ VertexCodec::Decode<VertexFormat::Float2>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Float3>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     float* p = (float*) dst;
     for (int i = 0; i < 3; i++) {
         *p++ = (numSrcComps > i) ? src[i] * scale : 0.0f;
     }
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -55,12 +58,13 @@ VertexCodec::Decode<VertexFormat::Float3>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Float4>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     float* p = (float*) dst;
     for (int i = 0; i < 4; i++) {
         *p++ = (numSrcComps > i) ? src[i] * scale : 0.0f;
     }
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -73,7 +77,7 @@ VertexCodec::Decode<VertexFormat::Float4>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Byte4>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     const float x = src[0] * scale;
     const float y = (numSrcComps > 1) ? src[1] * scale : 0.0f;
@@ -81,7 +85,8 @@ VertexCodec::Encode<VertexFormat::Byte4>(uint8_t* dst, float scale, const float*
     const float w = (numSrcComps > 3) ? src[3] * scale : 0.0f;
     glm::i8vec4 packed(glm::clamp(glm::vec4(x, y, z, w), -128.0f, 127.0f));
     int8_t* p = (int8_t*) dst;
-    *p++ = packed.x; *p++ = packed.y; *p++ = packed.z; *p = packed.w;
+    *p++ = packed.x; *p++ = packed.y; *p++ = packed.z; *p++ = packed.w;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -94,7 +99,7 @@ VertexCodec::Decode<VertexFormat::Byte4>(float* dst, float scale, const uint8_t*
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Byte4N>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     scale *= 127.0f;
     const float x = src[0] * scale;
@@ -103,7 +108,8 @@ VertexCodec::Encode<VertexFormat::Byte4N>(uint8_t* dst, float scale, const float
     const float w = (numSrcComps > 3) ? src[3] * scale : 0.0f;
     glm::i8vec4 packed(glm::round(glm::clamp(glm::vec4(x, y, z, w), -128.0f, 127.0f)));
     int8_t* p = (int8_t*) dst;
-    *p++ = packed.x; *p++ = packed.y; *p++ = packed.z; *p = packed.w;
+    *p++ = packed.x; *p++ = packed.y; *p++ = packed.z; *p++ = packed.w;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -117,14 +123,15 @@ VertexCodec::Decode<VertexFormat::Byte4N>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::UByte4>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     const float x = src[0] * scale;
     const float y = (numSrcComps > 1) ? src[1] * scale : 0.0f;
     const float z = (numSrcComps > 2) ? src[2] * scale : 0.0f;
     const float w = (numSrcComps > 3) ? src[3] * scale : 0.0f;
     glm::u8vec4 packed(glm::clamp(glm::vec4(x, y, z, w), 0.0f, 255.0f));
-    *dst++ = packed.x; *dst++ = packed.y; *dst++ = packed.z; *dst = packed.w;
+    *dst++ = packed.x; *dst++ = packed.y; *dst++ = packed.z; *dst++ = packed.w;
+    return dst;
 }
 
 //------------------------------------------------------------------------------
@@ -137,7 +144,7 @@ VertexCodec::Decode<VertexFormat::UByte4>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::UByte4N>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     scale *= 255.0f;
     const float x = src[0] * scale;
@@ -145,7 +152,8 @@ VertexCodec::Encode<VertexFormat::UByte4N>(uint8_t* dst, float scale, const floa
     const float z = (numSrcComps > 2) ? src[2] * scale : 0.0f;
     const float w = (numSrcComps > 3) ? src[3] * scale : 0.0f;
     glm::u8vec4 packed(glm::round(glm::clamp(glm::vec4(x, y, z, w), 0.0f, 255.0f)));
-    *dst++ = packed.x; *dst++ = packed.y; *dst++ = packed.z; *dst = packed.w;
+    *dst++ = packed.x; *dst++ = packed.y; *dst++ = packed.z; *dst++ = packed.w;
+    return dst;
 }
 
 //------------------------------------------------------------------------------
@@ -159,13 +167,14 @@ VertexCodec::Decode<VertexFormat::UByte4N>(float* dst, float scale, const uint8_
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Short2>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     const float x = src[0] * scale;
     const float y = (numSrcComps > 1) ? src[1] * scale : 0.0f;
     glm::i16vec2 packed(glm::clamp(glm::vec2(x, y), -32768.0f, 32767.0f));
     int16_t* p = (int16_t*) dst;
-    *p++ = packed.x; *p = packed.y;
+    *p++ = packed.x; *p++ = packed.y;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -178,14 +187,15 @@ VertexCodec::Decode<VertexFormat::Short2>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Short2N>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     scale *= 32767.0f;
     const float x = src[0] * scale;
     const float y = (numSrcComps > 1) ? src[1] * scale : 0.0f;
     glm::i16vec2 packed(glm::round(glm::clamp(glm::vec2(x, y), -32768.0f, 32767.0f)));
     int16_t* p = (int16_t*) dst;
-    *p++ = packed.x; *p = packed.y;
+    *p++ = packed.x; *p++ = packed.y;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -199,7 +209,7 @@ VertexCodec::Decode<VertexFormat::Short2N>(float* dst, float scale, const uint8_
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Short4>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     const float x = src[0] * scale;
     const float y = (numSrcComps > 1) ? src[1] * scale : 0.0f;
@@ -208,6 +218,7 @@ VertexCodec::Encode<VertexFormat::Short4>(uint8_t* dst, float scale, const float
     glm::i16vec4 packed(glm::clamp(glm::vec4(x, y, z, w), -32768.0f, 32767.0f));
     int16_t* p = (int16_t*) dst;
     *p++ = packed.x; *p++ = packed.y; *p++ = packed.z; *p++ = packed.w;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------
@@ -220,7 +231,7 @@ VertexCodec::Decode<VertexFormat::Short4>(float* dst, float scale, const uint8_t
 }
 
 //------------------------------------------------------------------------------
-template<> void
+template<> uint8_t*
 VertexCodec::Encode<VertexFormat::Short4N>(uint8_t* dst, float scale, const float* src, int numSrcComps) {
     scale *= 32767.0f;
     const float x = src[0] * scale;
@@ -230,6 +241,7 @@ VertexCodec::Encode<VertexFormat::Short4N>(uint8_t* dst, float scale, const floa
     glm::i16vec4 packed(glm::round(glm::clamp(glm::vec4(x, y, z, w), -32768.0f, 32767.0f)));
     int16_t* p = (int16_t*) dst;
     *p++ = packed.x; *p++ = packed.y; *p++ = packed.z; *p++ = packed.w;
+    return (uint8_t*)p;
 }
 
 //------------------------------------------------------------------------------

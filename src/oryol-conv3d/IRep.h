@@ -65,17 +65,17 @@ struct IRep {
     struct Bone {
         std::string Name;
         int32_t Parent = -1;
-        glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::vec3 Scaling = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec4 Rotation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        glm::vec3 Translate = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 Scale = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec4 Rotate = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     };
     struct Node {
         std::string Name;
         int32_t Parent = -1;
-        std::vector<uint32_t> Meshes;
-        glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::vec3 Scaling = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec4 Rotation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        std::vector<Mesh> Meshes;
+        glm::vec3 Translate = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 Scale = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec4 Rotate = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     };
     struct KeyType {
         enum Enum {
@@ -112,7 +112,6 @@ struct IRep {
 
     std::vector<VertexComponent> VertexComponents;
     std::vector<Material> Materials;
-    std::vector<Mesh> Meshes;
     std::vector<Bone> Bones;
     std::vector<Node> Nodes;
     std::vector<KeyComponent> KeyComponents;
@@ -120,7 +119,8 @@ struct IRep {
     std::vector<float> VertexData;
     std::vector<uint16_t> IndexData;
     std::vector<float> KeyData;
-    
+
+    //-------------------------------------------------------------------------
     int MaterialIndex(const std::string& name) const {
         for (size_t i = 0; i < this->Materials.size(); i++) {
             if (name == this->Materials[i].Name) {
@@ -129,6 +129,7 @@ struct IRep {
         }
         return -1;
     };
+    //-------------------------------------------------------------------------
     int VertexStrideBytes() const {
         // number of bytes(!) from one vertex to next
         int stride = 0;
@@ -137,13 +138,17 @@ struct IRep {
         }
         return stride;
     }
+    //-------------------------------------------------------------------------
     int NumMeshVertices() const {
         int num = 0;
-        for (const auto& mesh : this->Meshes) {
-            num += mesh.NumVertices;
+        for (const auto& node : this->Nodes) {
+            for (const auto& mesh : node.Meshes) {
+                num += mesh.NumVertices;
+            }
         }
         return num;
     }
+    //-------------------------------------------------------------------------
     int NumValueProps() const {
         size_t num = 0;
         for (const auto& mat : this->Materials) {
@@ -151,6 +156,7 @@ struct IRep {
         }
         return (int)num;
     };
+    //-------------------------------------------------------------------------
     int NumPropValues() const {
         size_t num = 0;
         for (const auto& mat : this->Materials) {
@@ -160,6 +166,7 @@ struct IRep {
         }
         return num;
     };
+    //-------------------------------------------------------------------------
     int NumTextureProps() const {
         size_t num = 0;
         for (const auto& mat : this->Materials) {
@@ -167,6 +174,15 @@ struct IRep {
         }
         return (int)num;
     }
+    //-------------------------------------------------------------------------
+    int NumMeshes() const {
+        size_t num = 0;
+        for (const auto& node : this->Nodes) {
+            num += node.Meshes.size();
+        }   
+        return num;
+    }
+    //-------------------------------------------------------------------------
     int NumAnimCurves() const {
         size_t num = 0;
         for (const auto& clip : this->AnimClips) {

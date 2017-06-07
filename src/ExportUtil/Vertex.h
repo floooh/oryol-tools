@@ -108,22 +108,69 @@ public:
     }
     /// get byte size
     static int ByteSize(VertexFormat::Code c) {
-        static const int sizes[Num] = {
-            4,      // Float
-            8,      // Float2
-            12,     // Float3
-            16,     // Float4
-            4,      // Byte4
-            4,      // Byte4N
-            4,      // UByte4
-            4,      // UByte4N
-            4,      // Short2
-            4,      // Short2N
-            8,      // Short4
-            8,      // Short4N
-        };
-        assert((c >= 0) && (c < Num));
-        return sizes[c];
+        switch (c) {
+            case Float: 
+            case Byte4:
+            case Byte4N:
+            case UByte4:
+            case UByte4N:
+            case Short2:
+            case Short2N:
+                return 4;
+            case Float2:
+            case Short4:
+            case Short4N:
+                return 8;
+            case Float3:
+                return 12;
+            case Float4:
+                return 16;
+            default:
+                return 0;
+        }
+    }
+    /// check if this is a packed format (not one of the float formats)
+    static bool IsPacked(VertexFormat::Code c) {
+        switch (c) {
+            case Float:
+            case Float2:
+            case Float3:
+            case Float4:
+                return false;
+            case Byte4:
+            case Byte4N:
+            case UByte4:
+            case UByte4N:
+            case Short2:
+            case Short2N:
+            case Short4:
+            case Short4N:
+            default:
+                return true;
+        }
+    }
+    /// number of items in the vertex format
+    static int NumItems(VertexFormat::Code c) {
+        switch (c) {
+            case Float:
+                return 1;
+            case Float2:
+            case Short2:
+            case Short2N:
+                return 2;
+            case Float3:
+                return 3;
+            case Float4:
+            case Byte4:
+            case Byte4N:
+            case UByte4:
+            case UByte4N:
+            case Short4:
+            case Short4N:
+                return 4;
+            default:
+                return 0;
+        }
     }
 };
 
