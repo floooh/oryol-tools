@@ -26,19 +26,6 @@ OrbSaver::addString(const std::string& str) {
 }
 
 //------------------------------------------------------------------------------
-VertexFormat::Code
-OrbSaver::mapVertexFormat(VertexAttr::Code attr, VertexFormat::Code fmt) const {
-    // check if a vertex format mapping has been defined for a vertex attribute,
-    // if yes, return mapped format, otherwise return original format
-    if (VertexFormats.find(attr) != VertexFormats.end()) {
-        return VertexFormats.at(attr);
-    }
-    else {
-        return fmt;
-    }
-}
-
-//------------------------------------------------------------------------------
 static OrbVertexAttr::Enum
 toOrbVertexAttr(VertexAttr::Code attr) {
     switch (attr) {
@@ -92,17 +79,6 @@ toOrbAnimKeyFormat(IRep::KeyType::Enum t) {
 }
 
 //------------------------------------------------------------------------------
-int
-OrbSaver::vertexStrideInBytes(const IRep& irep) const {
-    // compute the size of the destination vertex layout in num bytes
-    int size = 0;
-    for (const auto& comp : irep.VertexComponents) {
-        size += VertexFormat::ByteSize(mapVertexFormat(comp.Attr, comp.Format));
-    }
-    return size;
-}
-
-//------------------------------------------------------------------------------
 static uint32_t
 roundup4(uint32_t val) {
     return (val + 3) & ~3;
@@ -111,6 +87,16 @@ roundup4(uint32_t val) {
 //------------------------------------------------------------------------------
 void
 OrbSaver::Save(const std::string& path, const IRep& irep) {
+
+    // setup the destination layout, this is the cross-section of
+    // the requested layout, and what's actually in the IRep
+    this->DstLayout.Components.clear();
+    for (const auto& comp : this->Layout.Components) {
+        if (irep.HasVertexAttr(comp.Attr)) {
+            this->DstLayout.Components.push_back(comp);
+        }
+    }
+
     FILE* fp = fopen(path.c_str(), "wb");
     Log::FailIf(!fp, "Failed to open file '%s'\n", path.c_str());
 
@@ -120,7 +106,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     OrbHeader hdr;
     hdr.Magic = 'ORB1';
     hdr.VertexComponentOffset = offset;
-    hdr.NumVertexComponents = irep.VertexComponents.size();
+    hdr.NumVertexComponents = this->DstLayout.Components.size();
     offset += sizeof(OrbVertexComponent) * hdr.NumVertexComponents;
     hdr.ValuePropOffset = offset;
     hdr.NumValueProps = irep.NumValueProps();
@@ -149,12 +135,12 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     hdr.AnimClipOffset = offset;
     hdr.NumAnimClips = irep.AnimClips.size();
     offset += sizeof(OrbAnimClip) * hdr.NumAnimClips;
-    const int vertexStrideInFloats = irep.VertexStrideBytes() / sizeof(float);
-    Log::FailIf((irep.VertexData.size() % vertexStrideInFloats) != 0, "Vertex data size mismatch!\n");
-    const int numVertices = irep.VertexData.size() / vertexStrideInFloats;
+    const int irepVertexStrideInFloats = irep.VertexStrideBytes() / sizeof(float);
+    Log::FailIf((irep.VertexData.size() % irepVertexStrideInFloats) != 0, "Vertex data size mismatch!\n");
+    const int numVertices = irep.VertexData.size() / irepVertexStrideInFloats;
     Log::FailIf((irep.NumMeshVertices() != numVertices), "Number of vertices mismatch!\n");
     hdr.VertexDataOffset = offset;
-    hdr.VertexDataSize = numVertices * vertexStrideInBytes(irep);
+    hdr.VertexDataSize = numVertices * this->DstLayout.ByteSize();
     offset += hdr.VertexDataSize;
     hdr.IndexDataOffset = offset;
     hdr.IndexDataSize = roundup4(irep.IndexData.size() * sizeof(uint16_t));
@@ -168,10 +154,10 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
 
     // write vertex components
     Log::FailIf(ftell(fp) != hdr.VertexComponentOffset, "File offset error (VertexComponentOffset)\n");
-    for (const auto& src : irep.VertexComponents) {
+    for (const auto& src : this->DstLayout.Components) {
         OrbVertexComponent dst;
         dst.Attr = toOrbVertexAttr(src.Attr);
-        dst.Format = toOrbVertexFormat(mapVertexFormat(src.Attr, src.Format));
+        dst.Format = toOrbVertexFormat(src.Format);
         fwrite(&dst, 1, sizeof(dst), fp);
     }
 
@@ -315,14 +301,19 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     // write the vertex data
     {
         Log::FailIf(ftell(fp) != hdr.VertexDataOffset, "File offset error (VertexDataOffset)\n");
-        const float* srcPtr = &(irep.VertexData[0]);
+        const float* srcStart = &(irep.VertexData[0]);
+        const int srcStride = irep.VertexStrideBytes() / sizeof(float);
         uint8_t encodeSpace[1024];
-        Log::FailIf(this->vertexStrideInBytes(irep) >= int(sizeof(encodeSpace)), "Dst vertex stride too big\n");
+        Log::FailIf(this->DstLayout.ByteSize() >= int(sizeof(encodeSpace)), "Dst vertex stride too big\n");
         int allEncodedBytes = 0;
         for (int i = 0; i < numVertices; i++) {
             uint8_t* dstPtr = encodeSpace;
             for (const auto& srcComp : irep.VertexComponents) {
-                VertexFormat::Code dstFmt = this->mapVertexFormat(srcComp.Attr, srcComp.Format);
+                if (!this->DstLayout.HasAttr(srcComp.Attr)) {
+                    continue;
+                }
+                VertexFormat::Code dstFmt = this->DstLayout.AttrFormat(srcComp.Attr);
+                const float* srcPtr = srcStart + i*srcStride + srcComp.Offset/4;
                 const int numSrcItems = VertexFormat::NumItems(srcComp.Format);
                 switch (dstFmt) {
                     case VertexFormat::Float:
@@ -364,13 +355,11 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
                         break;
                     default: break;
                 }
-                srcPtr += numSrcItems;
             }
             const int numEncodedBytes = dstPtr - encodeSpace;
             allEncodedBytes += numEncodedBytes;
             fwrite(encodeSpace, 1, numEncodedBytes, fp);
         }
-        Log::FailIf(srcPtr != &(*irep.VertexData.end()), "Encoding source length error\n");
         Log::FailIf(allEncodedBytes != int(hdr.VertexDataSize), "Encoded destination length error!\n");
     }
 

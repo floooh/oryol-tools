@@ -416,7 +416,16 @@ N3Loader::LoadMeshes(const std::string& n3AssetDir) {
     VertexLayout layout({
         { VertexAttr::Position, VertexFormat::Float3 },
         { VertexAttr::Normal, VertexFormat::Float3 },
-        { VertexAttr::TexCoord0, VertexFormat::Float2 }
+        { VertexAttr::TexCoord0, VertexFormat::Float2 },
+        { VertexAttr::TexCoord1, VertexFormat::Float2 },
+        { VertexAttr::TexCoord2, VertexFormat::Float2 },
+        { VertexAttr::TexCoord3, VertexFormat::Float2 },
+        { VertexAttr::Tangent, VertexFormat::Float3 },
+        { VertexAttr::Binormal, VertexFormat::Float3 },
+        { VertexAttr::Weights, VertexFormat::Float4 },
+        { VertexAttr::Indices, VertexFormat::Float4 },
+        { VertexAttr::Color0, VertexFormat::Float4 },
+        { VertexAttr::Color1, VertexFormat::Float4 }
     });
     this->nvx2Loader.Clear();
     this->nvx2Loader.Layout = layout;

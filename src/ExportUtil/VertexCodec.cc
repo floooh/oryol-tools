@@ -14,9 +14,9 @@ VertexCodec::Encode<VertexFormat::Float>(uint8_t* dst, float scale, const float*
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Float>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Float>(float* dst, float scale, float bias, const uint8_t* src, int /*numSrcComps*/, int /*numDstComps*/) {
     const float* p = (const float*) src;
-    *dst = *p * scale;
+    *dst = (*p * scale) + bias;
 }
 
 //------------------------------------------------------------------------------
@@ -31,10 +31,12 @@ VertexCodec::Encode<VertexFormat::Float2>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Float2>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Float2>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const float* p = (const float*) src;
     for (int i = 0; i < 2; i++) {
-        *dst++ = (numSrcComps > i) ? p[i] * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? (p[i] * scale) + bias : 0.0f;
+        }
     }
 }
 
@@ -50,10 +52,12 @@ VertexCodec::Encode<VertexFormat::Float3>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Float3>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Float3>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const float* p = (const float*) src;
     for (int i = 0; i < 3; i++) {
-        *dst++ = (numSrcComps > i) ? p[i] * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? p[i] * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -69,10 +73,12 @@ VertexCodec::Encode<VertexFormat::Float4>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Float4>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Float4>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const float* p = (const float*) src;
     for (int i = 0; i < 4; i++) {
-        *dst++ = (numSrcComps > i) ? p[i] * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? p[i] * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -91,10 +97,12 @@ VertexCodec::Encode<VertexFormat::Byte4>(uint8_t* dst, float scale, const float*
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Byte4>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Byte4>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const int8_t* p = (const int8_t*) src;
     for (int i = 0; i < 4; i++) {
-        *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -114,11 +122,13 @@ VertexCodec::Encode<VertexFormat::Byte4N>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Byte4N>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Byte4N>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     scale /= 127.0f;
     const int8_t* p = (const int8_t*) src;
     for (int i = 0; i < 4; i++) {
-        *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -136,10 +146,12 @@ VertexCodec::Encode<VertexFormat::UByte4>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::UByte4>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::UByte4>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const uint8_t* p = (const uint8_t*) src;
     for (int i = 0; i < 4; i++) {
-        *dst = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -158,11 +170,13 @@ VertexCodec::Encode<VertexFormat::UByte4N>(uint8_t* dst, float scale, const floa
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::UByte4N>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::UByte4N>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     scale *= 255.0f;
     const uint8_t* p = (const uint8_t*) src;
     for (int i = 0; i < 4; i++) {
-        *dst = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -179,10 +193,12 @@ VertexCodec::Encode<VertexFormat::Short2>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Short2>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Short2>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const int16_t* p = (const int16_t*) src;
     for (int i = 0; i < 2; i++) {
-        *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -200,11 +216,13 @@ VertexCodec::Encode<VertexFormat::Short2N>(uint8_t* dst, float scale, const floa
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Short2N>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Short2N>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     scale *= 32767.0f;
     const int16_t* p = (const int16_t*) src;
     for (int i = 0; i < 2; i++) {
-        *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -223,10 +241,12 @@ VertexCodec::Encode<VertexFormat::Short4>(uint8_t* dst, float scale, const float
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Short4>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Short4>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     const int16_t* p = (const int16_t*) dst;
     for (int i = 0; i < 4; i++) {
-        *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }
 
@@ -246,10 +266,12 @@ VertexCodec::Encode<VertexFormat::Short4N>(uint8_t* dst, float scale, const floa
 
 //------------------------------------------------------------------------------
 template<> void
-VertexCodec::Decode<VertexFormat::Short4N>(float* dst, float scale, const uint8_t* src, int numSrcComps) {
+VertexCodec::Decode<VertexFormat::Short4N>(float* dst, float scale, float bias, const uint8_t* src, int numSrcComps, int numDstComps) {
     scale *= 32767.0f;
     const int16_t* p = (const int16_t*) dst;
     for (int i = 0; i < 4; i++) {
-        *dst++ = (numSrcComps > i) ? float(p[i]) * scale : 0.0f;
+        if (i < numDstComps) {
+            *dst++ = (numSrcComps > i) ? float(p[i]) * scale + bias : 0.0f;
+        }
     }
 }

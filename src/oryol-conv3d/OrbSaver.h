@@ -12,13 +12,13 @@
 #include "OrbFileFormat.h"
 
 struct OrbSaver {
-    /// the intended vertex packing format
-    std::map<VertexAttr::Code, VertexFormat::Code> VertexFormats;
+    /// the requested vertex layout, drop any src components not in here, ignore non-existing src comps
+    VertexLayout Layout;
+    /// this is the cross-section of the requested layout, and the IRep layout
+    VertexLayout DstLayout;
     /// save IRep to ORB
     void Save(const std::string& path, const IRep& irep);
 
-    VertexFormat::Code mapVertexFormat(VertexAttr::Code attr, VertexFormat::Code fmt) const;
-    int vertexStrideInBytes(const IRep& irep) const;
     uint32_t addString(const std::string& str);
 
     std::vector<std::string> strings;

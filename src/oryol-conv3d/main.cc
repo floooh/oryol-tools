@@ -51,6 +51,9 @@ int main(int argc, const char** argv) {
 
     // save intermediate representation to output file
     OrbSaver orbSaver;
+    orbSaver.Layout.Components.push_back(VertexComponent(VertexAttr::Position, VertexFormat::Float3));
+    orbSaver.Layout.Components.push_back(VertexComponent(VertexAttr::Normal, VertexFormat::Byte4N));
+    orbSaver.Layout.Components.push_back(VertexComponent(VertexAttr::TexCoord0, VertexFormat::Float2));
     orbSaver.Save(args.GetString("-out"), irep);
 
     // dump intermediate representation

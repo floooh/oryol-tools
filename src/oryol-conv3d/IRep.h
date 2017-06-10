@@ -121,6 +121,15 @@ struct IRep {
     std::vector<float> KeyData;
 
     //-------------------------------------------------------------------------
+    bool HasVertexAttr(VertexAttr::Code attr) const {
+        for (const auto& comp : this->VertexComponents) {
+            if (comp.Attr == attr) {
+                return true;
+            }
+        }
+        return false;
+    };
+    //-------------------------------------------------------------------------
     int MaterialIndex(const std::string& name) const {
         for (size_t i = 0; i < this->Materials.size(); i++) {
             if (name == this->Materials[i].Name) {

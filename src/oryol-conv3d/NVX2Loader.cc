@@ -11,27 +11,27 @@ using namespace OryolTools;
 
 // vertex attr, source format, dest format
 static struct NVX2Loader::Component VertexComponentMapping[] = {
-    { VertexAttr::Position, VertexFormat::Float3, VertexFormat::Float3 },   // N2Coord
-    { VertexAttr::Normal, VertexFormat::Float3, VertexFormat::Float3 },     // N2Normal
-    { VertexAttr::Normal, VertexFormat::Byte4N, VertexFormat::Float3 },     // N2NormalUB4N
-    { VertexAttr::TexCoord0, VertexFormat::Float2, VertexFormat::Float2 },  // N2Uv0
-    { VertexAttr::TexCoord0, VertexFormat::Short2, VertexFormat::Float2 },  // N2Uv0S2
-    { VertexAttr::TexCoord1, VertexFormat::Float2, VertexFormat::Float2 },  // N2Uv2
-    { VertexAttr::TexCoord1, VertexFormat::Short2, VertexFormat::Float2 },  // N2Uv1S2
-    { VertexAttr::TexCoord2, VertexFormat::Float2, VertexFormat::Float2 },  // N2Uv2
-    { VertexAttr::TexCoord2, VertexFormat::Short2, VertexFormat::Float2 },  // N2Uv2S2
-    { VertexAttr::TexCoord3, VertexFormat::Float2, VertexFormat::Float2 },  // N2Uv3
-    { VertexAttr::TexCoord3, VertexFormat::Short2, VertexFormat::Float2 },  // N2Uv3S2
-    { VertexAttr::Color0, VertexFormat::Float4, VertexFormat::Float4 },     // N2Color
-    { VertexAttr::Color0, VertexFormat::UByte4N, VertexFormat::Float4 },    // N2ColorUB4N
-    { VertexAttr::Tangent, VertexFormat::Float3, VertexFormat::Float3 },    // N2Tangent
-    { VertexAttr::Tangent, VertexFormat::Byte4N, VertexFormat::Float3 },    // N2TangentUB4N
-    { VertexAttr::Binormal, VertexFormat::Float3, VertexFormat::Float3 },   // N2Binormal
-    { VertexAttr::Binormal, VertexFormat::Byte4N, VertexFormat::Float3 },   // N2BinormalUB4N
-    { VertexAttr::Weights, VertexFormat::Float4, VertexFormat::Float4 },    // N2Weights
-    { VertexAttr::Weights, VertexFormat::UByte4N, VertexFormat::Float4 },   // N2WeightUB4N
-    { VertexAttr::Indices, VertexFormat::Float4, VertexFormat::Float4 },    // N2JIndices
-    { VertexAttr::Indices, VertexFormat::UByte4, VertexFormat::Float4 },    // N2JIndicesUB4
+    { VertexAttr::Position, VertexFormat::Float3, VertexFormat::Float3 },                       // N2Coord
+    { VertexAttr::Normal, VertexFormat::Float3, VertexFormat::Float3 },                         // N2Normal
+    { VertexAttr::Normal, VertexFormat::UByte4, VertexFormat::Float3, 1.0f/127.0f, -1.0f },     // N2NormalUB4N
+    { VertexAttr::TexCoord0, VertexFormat::Float2, VertexFormat::Float2 },                      // N2Uv0
+    { VertexAttr::TexCoord0, VertexFormat::Short2, VertexFormat::Float2, 1.0f/8192.0f, 0.0f },  // N2Uv0S2
+    { VertexAttr::TexCoord1, VertexFormat::Float2, VertexFormat::Float2 },                      // N2Uv2
+    { VertexAttr::TexCoord1, VertexFormat::Short2, VertexFormat::Float2, 1.0f/8192.0f, 0.0f },  // N2Uv1S2
+    { VertexAttr::TexCoord2, VertexFormat::Float2, VertexFormat::Float2 },                      // N2Uv2
+    { VertexAttr::TexCoord2, VertexFormat::Short2, VertexFormat::Float2, 1.0f/8192.0f, 0.0f },  // N2Uv2S2
+    { VertexAttr::TexCoord3, VertexFormat::Float2, VertexFormat::Float2 },                      // N2Uv3
+    { VertexAttr::TexCoord3, VertexFormat::Short2, VertexFormat::Float2, 1.0f/8192.0f, 0.0f },  // N2Uv3S2
+    { VertexAttr::Color0, VertexFormat::Float4, VertexFormat::Float4 },                         // N2Color
+    { VertexAttr::Color0, VertexFormat::UByte4N, VertexFormat::Float4 },                        // N2ColorUB4N
+    { VertexAttr::Tangent, VertexFormat::Float3, VertexFormat::Float3 },                        // N2Tangent
+    { VertexAttr::Tangent, VertexFormat::UByte4, VertexFormat::Float3, 1.0f/127.0f, -1.0f },    // N2TangentUB4N
+    { VertexAttr::Binormal, VertexFormat::Float3, VertexFormat::Float3 },                       // N2Binormal
+    { VertexAttr::Binormal, VertexFormat::UByte4, VertexFormat::Float3, 1.0f/127.0f, -1.0f },   // N2BinormalUB4N
+    { VertexAttr::Weights, VertexFormat::Float4, VertexFormat::Float4 },                        // N2Weights
+    { VertexAttr::Weights, VertexFormat::UByte4N, VertexFormat::Float4 },                       // N2WeightUB4N
+    { VertexAttr::Indices, VertexFormat::Float4, VertexFormat::Float4 },                        // N2JIndices
+    { VertexAttr::Indices, VertexFormat::UByte4, VertexFormat::Float4 },                        // N2JIndicesUB4
 };
 
 //------------------------------------------------------------------------------
@@ -197,30 +197,31 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
         for (const auto& comp : mesh.Components) {
             float* dst = &(vxDstPtr[comp.DstOffset/sizeof(float)]);
             const uint8_t* src = &(vxSrcPtr[comp.SrcOffset]);
+            const int numDstComps = VertexFormat::NumItems(comp.DstFormat);
             switch (comp.SrcFormat) {
                 case VertexFormat::Float2:
-                    VertexCodec::Decode<VertexFormat::Float2>(dst, 1.0f, src, 2);
+                    VertexCodec::Decode<VertexFormat::Float2>(dst, comp.Scale, comp.Bias, src, 2, numDstComps);
                     break;
                 case VertexFormat::Float3:
-                    VertexCodec::Decode<VertexFormat::Float3>(dst, 1.0f, src, 3);
+                    VertexCodec::Decode<VertexFormat::Float3>(dst, comp.Scale, comp.Bias, src, 3, numDstComps);
                     break;
                 case VertexFormat::Float4:
-                    VertexCodec::Decode<VertexFormat::Float4>(dst, 1.0f, src, 4);
+                    VertexCodec::Decode<VertexFormat::Float4>(dst, comp.Scale, comp.Bias, src, 4, numDstComps);
                     break;
                 case VertexFormat::Byte4N:
-                    VertexCodec::Decode<VertexFormat::Byte4N>(dst, 1.0f, src, 4);
+                    VertexCodec::Decode<VertexFormat::Byte4N>(dst, comp.Scale, comp.Bias, src, 4, numDstComps);
                     break;
                 case VertexFormat::Byte4:
-                    VertexCodec::Decode<VertexFormat::Byte4>(dst, 1.0f, src, 4);
+                    VertexCodec::Decode<VertexFormat::Byte4>(dst, comp.Scale, comp.Bias, src, 4, numDstComps);
                     break;
                 case VertexFormat::UByte4N:
-                    VertexCodec::Decode<VertexFormat::UByte4N>(dst, 1.0f, src, 4);
+                    VertexCodec::Decode<VertexFormat::UByte4N>(dst, comp.Scale, comp.Bias, src, 4, numDstComps);
                     break;
                 case VertexFormat::UByte4:
-                    VertexCodec::Decode<VertexFormat::UByte4>(dst, 1.0f, src, 4);
+                    VertexCodec::Decode<VertexFormat::UByte4>(dst, comp.Scale, comp.Bias, src, 4, numDstComps);
                     break;
                 case VertexFormat::Short2:
-                    VertexCodec::Decode<VertexFormat::Short2>(dst, 1.0f/8192.0f, src, 2);
+                    VertexCodec::Decode<VertexFormat::Short2>(dst, comp.Scale, comp.Bias, src, 2, numDstComps);
                     break;
                 default:
                     break;
@@ -233,13 +234,15 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
         }
     }
 
-    // copy index data over
+    // copy triangle indices over, need to reverse the winding order
+    Log::FailIf((mesh.NumIndices % 3) != 0, "Number of indices not a multiple of 3!\n");
     mesh.IndexData.resize(mesh.NumIndices, 0);
     const uint16_t* ixSrcPtr = (const uint16_t*) vxSrcPtr;
     uint16_t* ixDstPtr = &(mesh.IndexData[0]);
-    for (int i = 0; i < mesh.NumIndices; i++) {
-        ixDstPtr[i] = ixSrcPtr[i];
+    for (int i = 0; i < (mesh.NumIndices/3); i++) {
+        ixDstPtr[i*3 + 0] = ixSrcPtr[i*3 + 2];
+        ixDstPtr[i*3 + 1] = ixSrcPtr[i*3 + 1];
+        ixDstPtr[i*3 + 2] = ixSrcPtr[i*3 + 0];
     }
-
     free((void*)start);
 }

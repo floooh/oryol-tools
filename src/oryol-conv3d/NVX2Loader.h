@@ -20,11 +20,13 @@ struct NVX2Loader {
         VertexAttr::Code Attr = VertexAttr::Invalid; 
         VertexFormat::Code SrcFormat = VertexFormat::Invalid;
         VertexFormat::Code DstFormat = VertexFormat::Invalid;
+        float Scale = 1.0f;
+        float Bias = 0.0f;
         int SrcOffset = 0;  // in number of bytes
         int DstOffset = 0;  // in number of bytes
         
-        Component(VertexAttr::Code attr, VertexFormat::Code src, VertexFormat::Code dst):
-            Attr(attr), SrcFormat(src), DstFormat(dst) { };
+        Component(VertexAttr::Code attr, VertexFormat::Code src, VertexFormat::Code dst, float s=1.0f, float b=0.0f):
+            Attr(attr), SrcFormat(src), DstFormat(dst), Scale(s), Bias(b) { };
         bool operator==(const Component& rhs) const {
             return (this->Attr == rhs.Attr) && (this->SrcFormat == rhs.SrcFormat) && (this->DstFormat == rhs.DstFormat) &&
                    (this->SrcOffset == rhs.SrcOffset) && (this->DstOffset == rhs.DstOffset);

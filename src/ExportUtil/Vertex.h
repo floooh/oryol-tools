@@ -209,6 +209,16 @@ public:
         return false;
     }
 
+    /// get format by attr, return VertexFormat::Invalid if not found
+    VertexFormat::Code AttrFormat(VertexAttr::Code attr) const {
+        for (const auto& comp : this->Components) {
+            if (comp.Attr == attr) {
+                return comp.Format;
+            }
+        }
+        return VertexFormat::Invalid;
+    }
+
     /// compute byte size
     int ByteSize() const {
         int size = 0;
