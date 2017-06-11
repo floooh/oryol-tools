@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 #include "N3Loader.h"
 #include "ExportUtil/Log.h"
-#include "Util.h"
+#include "LoadUtil.h"
 #include "pystring.h"
 #include <stdio.h>
 #include <set>
@@ -20,6 +20,7 @@ N3Loader::Load(const std::string& n3AssetName, const std::string& n3AssetDir, IR
 
     this->LoadN3(path);
     this->LoadMeshes(n3AssetDir);
+    this->LoadAnims(n3AssetDir);
     this->ToIRep(irep);
 }
 
@@ -442,8 +443,23 @@ N3Loader::LoadMeshes(const std::string& n3AssetDir) {
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ToIRep(IRep& irep) {
+N3Loader::LoadAnims(const std::string& n3AssetDir) {
+    this->nax3Loader.Clear();
+    
+    // look for a character node with an animation (there should
+    // only be one, or none)
+    for (const auto& node : this->Nodes) {
+        if (!node.Animation.empty()) {
+            this->nax3Loader.Load(node.Animation, n3AssetDir);
+            this->nax3Loader.Validate();
+            break;
+        }
+    }
+}
 
+//------------------------------------------------------------------------------
+void
+N3Loader::ToIRep(IRep& irep) {
     // vertex components
     for (const auto& srcComp : this->nvx2Loader.Meshes[0].Components) {
         IRep::VertexComponent dstComp;

@@ -11,6 +11,7 @@
 #include <glm/vec4.hpp>
 #include "IRep.h"
 #include "NVX2Loader.h"
+#include "NAX3Loader.h"
 
 struct N3Loader {
     /// load a file into intermediate representation
@@ -20,6 +21,8 @@ struct N3Loader {
     void LoadN3(const std::string& path);
     /// load NVX2 mesh data
     void LoadMeshes(const std::string& n3AssetDir);
+    /// load NAX3 animation data
+    void LoadAnims(const std::string& n3AssetDir);
     /// write loading result into intermediate representation
     void ToIRep(IRep& irep);
 
@@ -80,5 +83,6 @@ struct N3Loader {
     std::vector<N3Node> Nodes;
     std::vector<int> NodeIndexStack;
     NVX2Loader nvx2Loader;
+    NAX3Loader nax3Loader;
 };
 

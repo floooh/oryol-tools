@@ -154,6 +154,27 @@ N3JsonDumper::Dump(const N3Loader& n3) {
             }
         }
     }
+    if (!n3.nax3Loader.Clips.empty()) {
+        cJSON* clips = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "clips", clips);
+        for (const auto& item : n3.nax3Loader.Clips) {
+            cJSON* clip = cJSON_CreateObject();
+            cJSON_AddItemToArray(clips, clip);
+            cJSON_AddItemToObject(clip, "name", cJSON_CreateString(item.Name.c_str()));
+            cJSON_AddItemToObject(clip, "key_duration", cJSON_CreateNumber(item.KeyDuration));
+            cJSON* curves = cJSON_CreateArray();
+            cJSON_AddItemToObject(clip, "curves", curves);
+            for (const auto& curveItem : item.Curves) {
+                cJSON* curve = cJSON_CreateObject();
+                cJSON_AddItemToArray(curves, curve);
+                cJSON_AddItemToObject(curve, "is_static", cJSON_CreateBool(curveItem.IsStatic));
+                cJSON_AddItemToObject(curve, "is_active", cJSON_CreateBool(curveItem.IsActive));
+                cJSON_AddItemToObject(curve, "type", cJSON_CreateString(NAX3Loader::CurveType::ToString(curveItem.Type)));
+                cJSON_AddItemToObject(curve, "static_key", cJSON_CreateFloatArray(curveItem.StaticKey.Value, 4));
+                cJSON_AddItemToObject(curve, "num_keys", cJSON_CreateNumber(curveItem.Keys.size()));
+            }
+        }
+    }
     char* rawStr = cJSON_Print(root);
     std::string jsonStr(rawStr);
     free(rawStr);

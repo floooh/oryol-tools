@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 #include "NVX2Loader.h"
 #include "ExportUtil/Log.h"
-#include "Util.h"
+#include "LoadUtil.h"
 #include "ExportUtil/Vertex.h"
 #include "ExportUtil/VertexCodec.h"
 
@@ -146,15 +146,7 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
 
     // load the entire file into memory
     std::string path = n3AssetDir + "/meshes/" + nvx2AssetName;
-    FILE* fp = fopen(path.c_str(), "rb");
-    Log::FailIf(!fp, "Failed to open file '%s'\n", path.c_str());
-    fseek(fp, 0, SEEK_END);
-    int size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    const uint8_t* start = (const uint8_t*) malloc(size);
-    int bytesRead = fread((void*)start, 1, size, fp);
-    Log::FailIf(bytesRead != size, "Failed reading file '%s' into memory\n", path.c_str());
-    fclose(fp);
+    const uint8_t* start = load_file(path);
 
     // parse the header
     const Nvx2Header* nvx2Hdr = (const Nvx2Header*) start;
@@ -244,5 +236,5 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
         ixDstPtr[i*3 + 1] = ixSrcPtr[i*3 + 1];
         ixDstPtr[i*3 + 2] = ixSrcPtr[i*3 + 0];
     }
-    free((void*)start);
+    free_file_data(start);
 }
