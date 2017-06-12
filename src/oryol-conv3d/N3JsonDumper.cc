@@ -170,7 +170,7 @@ N3JsonDumper::Dump(const N3Loader& n3) {
                 cJSON_AddItemToObject(curve, "is_static", cJSON_CreateBool(curveItem.IsStatic));
                 cJSON_AddItemToObject(curve, "is_active", cJSON_CreateBool(curveItem.IsActive));
                 cJSON_AddItemToObject(curve, "type", cJSON_CreateString(NAX3Loader::CurveType::ToString(curveItem.Type)));
-                cJSON_AddItemToObject(curve, "static_key", cJSON_CreateFloatArray(curveItem.StaticKey.Value, 4));
+                cJSON_AddItemToObject(curve, "static_key", cJSON_CreateFloatArray(&curveItem.StaticKey.x, 4));
                 cJSON_AddItemToObject(curve, "num_keys", cJSON_CreateNumber(curveItem.Keys.size()));
             }
         }

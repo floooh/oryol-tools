@@ -96,13 +96,22 @@ struct IRep {
                 default: return "Invalid";
             }
         }
-    };
-    struct KeyComponent {
-        KeyType::Enum Type = KeyType::Invalid;
+        static int ByteSize(Enum t) {
+            switch (t) {
+                case Float: return 4;
+                case Float2: return 8;
+                case Float3: return 12;
+                case Float4: return 16;
+                case Quaternion: return 16;
+                default: return 0;
+            }
+        }
     };
     struct AnimCurve {
-        int32_t KeyOffset = -1;     // float index into Keys array, -1 if curve is static
+        bool IsStatic = false;
+        KeyType::Enum Type = KeyType::Invalid;
         glm::vec4 StaticKey;
+        std::vector<glm::vec4> Keys;
     };
     struct AnimClip {
         std::string Name;
@@ -114,11 +123,9 @@ struct IRep {
     std::vector<Material> Materials;
     std::vector<Bone> Bones;
     std::vector<Node> Nodes;
-    std::vector<KeyComponent> KeyComponents;
     std::vector<AnimClip> AnimClips;
     std::vector<float> VertexData;
     std::vector<uint16_t> IndexData;
-    std::vector<float> KeyData;
 
     //-------------------------------------------------------------------------
     bool HasVertexAttr(VertexAttr::Code attr) const {
@@ -198,5 +205,58 @@ struct IRep {
             num += clip.Curves.size();
         }
         return (int)num;
+    }
+    //-------------------------------------------------------------------------
+    int NumAnimCurvesPerClip() const {
+        if (this->AnimClips.empty()) {
+            return 0;
+        }
+        else {
+            return this->AnimClips[0].Curves.size();
+        }
+    }
+    //-------------------------------------------------------------------------
+    int AnimClipKeyStride(int clipIndex) const {
+        int stride = 0;
+        const auto& clip = this->AnimClips[clipIndex];
+        for (const auto& curve : clip.Curves) {
+            if (!curve.IsStatic) {
+                stride += KeyType::ByteSize(curve.Type);
+            }
+        }
+        return stride;
+    }
+    //-------------------------------------------------------------------------
+    int AnimClipLength(int clipIndex) const {
+        for (const auto& curve : this->AnimClips[clipIndex].Curves) {
+            // all curves in the clip either have no keys, or the same number of keys
+            if (!curve.Keys.empty()) {
+                return curve.Keys.size();
+            }
+        }
+        return 0;
+    }
+    //-------------------------------------------------------------------------
+    int AnimKeyDataSize() const {
+        int animKeyDataSize = 0;
+        for (int clipIndex = 0; clipIndex < int(this->AnimClips.size()); clipIndex++) {
+            animKeyDataSize += this->AnimClipKeyStride(clipIndex) * this->AnimClipLength(clipIndex);
+        }
+        return animKeyDataSize;
+    }
+    //-------------------------------------------------------------------------
+    int AnimKeyOffset(int clipIndex, int curveIndex) const {
+        int keyOffset = 0;
+        for (int i = 0; i < clipIndex; i++) {
+            keyOffset += this->AnimClipLength(i) * this->AnimClipKeyStride(i);
+        }
+        const auto& clip = this->AnimClips[clipIndex];
+        for (int i = 0; i < curveIndex; i++) {
+            const auto& curve = clip.Curves[i];
+            if (!curve.IsStatic) {
+                keyOffset += KeyType::ByteSize(curve.Type);
+            }
+        }
+        return keyOffset;
     }
 };

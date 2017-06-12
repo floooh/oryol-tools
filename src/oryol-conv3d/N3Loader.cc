@@ -574,6 +574,35 @@ N3Loader::ToIRep(IRep& irep) {
         }
     }
 
+    // anim clips and curves
+    for (const auto& nax3Clip : this->nax3Loader.Clips) {
+        irep.AnimClips.push_back(IRep::AnimClip());
+        auto& clip = irep.AnimClips.back();
+        clip.Name = nax3Clip.Name;
+        clip.KeyDuration = nax3Clip.KeyDuration;
+        for (const auto& nax3Curve : nax3Clip.Curves) {
+            clip.Curves.push_back(IRep::AnimCurve());
+            auto& curve = clip.Curves.back();
+            curve.IsStatic = nax3Curve.IsStatic;
+            curve.StaticKey = nax3Curve.StaticKey;
+            curve.Keys = nax3Curve.Keys;
+            switch (nax3Curve.Type) {
+                case NAX3Loader::CurveType::Translation:
+                case NAX3Loader::CurveType::Scale:
+                    curve.Type = IRep::KeyType::Float3;
+                    break;
+                case NAX3Loader::CurveType::Rotation:
+                    curve.Type = IRep::KeyType::Quaternion;
+                    break;
+                case NAX3Loader::CurveType::Color:
+                case NAX3Loader::CurveType::Float4:
+                default:
+                    curve.Type = IRep::KeyType::Float4;
+                    break;
+            }
+        }
+    }
+
     // copy over vertices
     const int numVertices = this->nvx2Loader.NumVertices();
     /// FIXME: need to fix this!? need to separate between mesh and element range!

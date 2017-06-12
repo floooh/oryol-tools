@@ -96,17 +96,6 @@ IRepJsonDumper::Dump(const IRep& irep) {
         }
     }
 
-    // anim key layout
-    if (!irep.KeyComponents.empty()) {
-        cJSON* comps = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "key_components", comps);
-        for (const auto& item : irep.KeyComponents) {
-            cJSON* comp = cJSON_CreateObject();
-            cJSON_AddItemToArray(comps, comp);
-            cJSON_AddItemToObject(comp, "type", cJSON_CreateString(IRep::KeyType::ToString(item.Type)));
-        }
-    }
-
     // anim clips
     if (!irep.AnimClips.empty()) {
         cJSON* clips = cJSON_CreateArray();
@@ -121,8 +110,9 @@ IRepJsonDumper::Dump(const IRep& irep) {
             for (const auto& curveItem : item.Curves) {
                 cJSON* curve = cJSON_CreateObject();
                 cJSON_AddItemToArray(curves, curve);
-                cJSON_AddItemToObject(curve, "key_offset", cJSON_CreateNumber(curveItem.KeyOffset));
+                cJSON_AddItemToObject(curve, "type", cJSON_CreateString(IRep::KeyType::ToString(curveItem.Type)));
                 cJSON_AddItemToObject(curve, "static_key", cJSON_CreateFloatArray(&curveItem.StaticKey.x, 4));
+                cJSON_AddItemToObject(curve, "num_keys", cJSON_CreateNumber(curveItem.Keys.size()));
             }
         }
     }

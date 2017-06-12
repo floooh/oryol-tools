@@ -56,7 +56,7 @@ NAX3Loader::Load(const std::string& nax3AssetName, const std::string& n3AssetDir
             curve.IsActive = nax3Curve->IsActive;
             curve.Type = (CurveType::Enum) nax3Curve->CurveType;
             for (int i = 0; i < 4; i++) {
-                curve.StaticKey.Value[i] = nax3Curve->StaticKey[i];
+                curve.StaticKey[i] = nax3Curve->StaticKey[i];
             }
             if (!curve.IsStatic && curve.IsActive) {
                 curve.Keys.reserve(nax3Clip->NumKeys);
@@ -81,19 +81,19 @@ NAX3Loader::Load(const std::string& nax3AssetName, const std::string& n3AssetDir
                 for (int curveIndex = 0; curveIndex < numCurves; curveIndex++) {
                     const Nax3Curve* nax3Curve = &nax3Curves[curveIndex];
                     if (!nax3Curve->IsStatic && nax3Curve->IsActive) {
-                        Key dstKey;
+                        glm::vec4 dstKey;
                         if (nax3Curve->CurveType == CurveType::Rotation) {
                             // this is a packed quaternion with 16-bit components
                             const float div = (const float) 0x7FFF;
                             for (int i = 0; i < 4; i++) {
-                                dstKey.Value[i] = (float)((int16_t*)nacPtr)[i] / div;
+                                dstKey[i] = (float)((int16_t*)nacPtr)[i] / div;
                             }
                             nacPtr += 8;
                         }
                         else {
                             // unpacked, 4 float components
                             for (int i = 0; i < 4; i++) {
-                                dstKey.Value[i] = ((float*)nacPtr)[i];
+                                dstKey[i] = ((float*)nacPtr)[i];
                             }
                         }
                         clip.Curves[curveIndex].Keys.push_back(dstKey);
@@ -109,9 +109,33 @@ NAX3Loader::Load(const std::string& nax3AssetName, const std::string& n3AssetDir
 //------------------------------------------------------------------------------
 void
 NAX3Loader::Validate() {
+    // must have at least one clip
     Log::FailIf(this->Clips.empty(), "No clips in animation found!\n");
+
+    // all clips must have same number of curves
     const int numCurves = this->Clips[0].Curves.size();
     for (const auto& clip : this->Clips) {
-        Log::FailIf(numCurves != int(clip.Curves.size()), "Inconsistent number of curves!\n");
+        Log::FailIf(numCurves != int(clip.Curves.size()), "Inconsistent number of anim curves!\n");
+    }
+
+    // all clips must have the same 'curve layout'
+    const auto& clip0 = this->Clips[0];
+    for (const auto& clip : this->Clips) {
+        for (int i = 0; i < numCurves; i++) {
+            Log::FailIf(clip0.Curves[i].Type != clip.Curves[i].Type, "Inconsistent anim curve layout!\n");
+        }
+    }
+
+    // all curves of a clip must either have no keys, or the same number of keys
+    for (const auto& clip : this->Clips) {
+        int numKeys = 0;
+        for (const auto& curve : clip.Curves) {
+            if ((numKeys == 0) && !curve.Keys.empty()) {
+                numKeys = curve.Keys.size();
+            }
+            if (!curve.Keys.empty()) {
+                Log::FailIf(int(curve.Keys.size()) != numKeys, "Inconsistent number of keys in curves!\n");
+            }
+        }
     }
 }

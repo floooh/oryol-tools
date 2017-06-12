@@ -127,8 +127,8 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     hdr.NumNodes = irep.Nodes.size();
     offset += sizeof(OrbNode) * hdr.NumNodes;
     hdr.AnimKeyComponentOffset = offset;
-    hdr.NumAnimKeyComponents = irep.KeyComponents.size();
-    offset += sizeof(OrbAnimKeyFormat) * hdr.NumAnimKeyComponents;
+    hdr.NumAnimKeyComponents = irep.NumAnimCurvesPerClip();
+    offset += sizeof(OrbAnimKeyComponent) * hdr.NumAnimKeyComponents;
     hdr.AnimCurveOffset = offset;
     hdr.NumAnimCurves = irep.NumAnimCurves();
     offset += sizeof(OrbAnimCurve) * hdr.NumAnimCurves;
@@ -146,7 +146,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     hdr.IndexDataSize = roundup4(irep.IndexData.size() * sizeof(uint16_t));
     offset += hdr.IndexDataSize;
     hdr.AnimKeyDataOffset = offset;
-    hdr.AnimKeyDataSize = irep.KeyData.size() * sizeof(float);
+    hdr.AnimKeyDataSize = irep.AnimKeyDataSize();
     offset += hdr.AnimKeyDataSize;
     hdr.StringPoolDataOffset = offset;
     hdr.StringPoolDataSize = 0;     // this will be filled in at the end!
@@ -264,20 +264,30 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
 
     // write anim key formats
     Log::FailIf(ftell(fp) != hdr.AnimKeyComponentOffset, "File offset error (AnimKeyComponentOffset)\n");
-    for (const auto& src : irep.KeyComponents) {
-        OrbAnimKeyComponent dst;
-        dst.KeyFormat = toOrbAnimKeyFormat(src.Type);
-        fwrite(&dst, 1, sizeof(dst), fp);
+    if (!irep.AnimClips.empty()) {
+        for (const auto& curve : irep.AnimClips[0].Curves) {
+            OrbAnimKeyComponent dst;
+            dst.KeyFormat = toOrbAnimKeyFormat(curve.Type);
+            fwrite(&dst, 1, sizeof(dst), fp);
+        }
     }
 
     // write anim curves
     Log::FailIf(ftell(fp) != hdr.AnimCurveOffset, "File offset error (AnimCurveOffset)\n");
-    for (const auto& clip : irep.AnimClips) {
-        for (const auto& src : clip.Curves) {
+    for (int clipIndex = 0; clipIndex < int(irep.AnimClips.size()); clipIndex++) {
+        const auto& clip = irep.AnimClips[clipIndex];
+        for (int curveIndex = 0; curveIndex < int(clip.Curves.size()); curveIndex++) {
+            const auto& curve = clip.Curves[curveIndex];
             OrbAnimCurve dst;
-            dst.KeyOffset = src.KeyOffset;
+            if (curve.IsStatic) {
+                dst.KeyOffset = -1;
+            }
+            else {
+                dst.KeyOffset = irep.AnimKeyOffset(clipIndex, curveIndex);
+                Log::FailIf(dst.KeyOffset >= int(hdr.AnimKeyDataSize), "Anim key offset too big\n");
+            }
             for (int i = 0; i < 4; i++) {
-                dst.StaticKey[i] = src.StaticKey[i];
+                dst.StaticKey[i] = curve.StaticKey[i];
             }
             fwrite(&dst, 1, sizeof(dst), fp);
         }
@@ -375,8 +385,36 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
         }
     }
 
-    // FIXME: write animation keys
-    Log::FailIf(hdr.AnimKeyDataSize > 0, "FIXME: write anim keys!\n");
+    // write animation keys
+    Log::FailIf(ftell(fp) != hdr.AnimKeyDataOffset, "File offset error (AnimKeyDataSize)\n");
+    for (int clipIndex = 0; clipIndex < int(irep.AnimClips.size()); clipIndex++) {
+        const auto& clip = irep.AnimClips[clipIndex];
+        const int clipLength = irep.AnimClipLength(clipIndex);
+        for (int keyIndex = 0; keyIndex < clipLength; keyIndex++) {
+            for (const auto& curve : clip.Curves) {
+                if (!curve.IsStatic) {
+                    const float* keyPtr = &curve.Keys[keyIndex].x;
+                    switch (curve.Type) {
+                        case IRep::KeyType::Float:
+                            fwrite(keyPtr, 1, 1*sizeof(float), fp);
+                            break;
+                        case IRep::KeyType::Float2:
+                            fwrite(keyPtr, 1, 2*sizeof(float), fp);
+                            break;
+                        case IRep::KeyType::Float3:
+                            fwrite(keyPtr, 1, 3*sizeof(float), fp);
+                            break;
+                        case IRep::KeyType::Float4:
+                        case IRep::KeyType::Quaternion:
+                            fwrite(keyPtr, 1, 4*sizeof(float), fp);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+    }
 
     // write string pool
     {

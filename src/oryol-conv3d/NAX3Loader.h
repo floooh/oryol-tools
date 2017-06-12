@@ -6,6 +6,7 @@
 */
 #include <string>
 #include <vector>
+#include <glm/vec4.hpp>
 
 struct NAX3Loader {
 
@@ -16,10 +17,6 @@ struct NAX3Loader {
     /// check that the loaded data is valid
     void Validate();
 
-    /// an animation keys
-    struct Key {
-        float Value[4] = { };
-    };
     /// anim curve types, the values are matching the NAX3 curve types (N3's CoreAnimation::CurveType)
     struct CurveType {
         enum Enum {
@@ -49,8 +46,8 @@ struct NAX3Loader {
         bool IsStatic = false;
         bool IsActive = false;
         CurveType::Enum Type = CurveType::Invalid;
-        Key StaticKey;
-        std::vector<Key> Keys;
+        glm::vec4 StaticKey;
+        std::vector<glm::vec4> Keys;
     };
     /// an animation clip hols animation curves
     struct Clip {
