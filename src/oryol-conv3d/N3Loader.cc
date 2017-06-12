@@ -475,6 +475,7 @@ N3Loader::ToIRep(IRep& irep) {
     for (const auto& n3Node : this->Nodes) {
         if (!n3Node.Joints.empty()) {
             isCharacter = true;
+            break;
         }
     }
 
@@ -557,9 +558,25 @@ N3Loader::ToIRep(IRep& irep) {
         }
     }
 
+    // character skeleton joints, find first node with joints (there should only be one)
+    for (const auto& n3Node : this->Nodes) {
+        if (!n3Node.Joints.empty()) {
+            for (const auto& n3Joint : n3Node.Joints) {
+                IRep::Bone bone;
+                bone.Name = n3Joint.Name;
+                bone.Parent = n3Joint.Parent;
+                bone.Translate = glm::vec3(n3Joint.PoseTranslation);
+                bone.Scale = glm::vec3(n3Joint.PoseScale);
+                bone.Rotate = n3Joint.PoseRotation;
+                irep.Bones.push_back(bone);
+            }
+            break;
+        }
+    }
+
     // copy over vertices
     const int numVertices = this->nvx2Loader.NumVertices();
-    /// FIXME: need to fix this! need to separate between mesh and element range!
+    /// FIXME: need to fix this!? need to separate between mesh and element range!
     Log::FailIf(numVertices >= (1<<16)-1, "Too many vertices in mesh (>64k)!");
 
     const int numIndices = this->nvx2Loader.NumIndices();
