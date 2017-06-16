@@ -297,10 +297,12 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     {
         uint32_t curveIndex = 0;
         Log::FailIf(ftell(fp) != hdr.AnimClipOffset, "File offset error (AnimClipOffset)\n");
-        for (const auto& src : irep.AnimClips) {
+        for (int clipIndex = 0; clipIndex < int(irep.AnimClips.size()); clipIndex++) {
+            const auto& src = irep.AnimClips[clipIndex];
             OrbAnimClip dst;
             dst.Name = addString(src.Name);
             dst.KeyDuration = src.KeyDuration;
+            dst.Length = irep.AnimClipLength(clipIndex);
             dst.FirstCurve = curveIndex;
             dst.NumCurves = src.Curves.size();
             curveIndex += dst.NumCurves;
