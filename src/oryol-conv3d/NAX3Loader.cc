@@ -95,12 +95,23 @@ NAX3Loader::Load(const std::string& nax3AssetName, const std::string& n3AssetDir
                             for (int i = 0; i < 4; i++) {
                                 dstKey[i] = ((float*)nacPtr)[i];
                             }
+                            nacPtr += 16;
                         }
                         clip.Curves[curveIndex].Keys.push_back(dstKey);
                     }
                 }
             }
             free_file_data(nacStart);
+        }
+
+        // for each non-static curve, init its static key with the first
+        // curve key, this way they static key information can be
+        // used as a approximate placeholder even if the actual
+        // curve data isn't available yet
+        for (auto& curve : clip.Curves) {
+            if (!curve.Keys.empty()) {
+                curve.StaticKey = curve.Keys[0];
+            }
         }
     }
     free_file_data(start);
