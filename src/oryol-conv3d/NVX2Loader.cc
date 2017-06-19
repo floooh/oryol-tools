@@ -238,3 +238,34 @@ NVX2Loader::Load(const std::string& nvx2AssetName, const std::string& n3AssetDir
     }
     free_file_data(start);
 }
+
+//------------------------------------------------------------------------------
+void
+NVX2Loader::GlobalizeJointIndices(const std::string& meshName, int primGroupIndex, const std::vector<int>& jointPalette) {
+    for (auto& mesh : this->Meshes) {
+        if (mesh.Name != meshName) {
+            continue;
+        }
+        int compOffset = -1;
+        for (const auto& comp : mesh.Components) {
+            if (comp.Attr == VertexAttr::Indices) {
+                compOffset = comp.DstOffset / sizeof(float);
+                break;
+            }
+        }
+        if (-1 == compOffset) {
+            continue;
+        }
+        const int firstVertex = mesh.PrimGroups[primGroupIndex].FirstVertex;
+        const int numVertices = mesh.PrimGroups[primGroupIndex].NumVertices;
+        for (int vtx = firstVertex; vtx < (firstVertex+numVertices); vtx++) {
+            int vtxOffset = vtx * (mesh.DstStride/sizeof(float)) + compOffset;
+            for (int i = 0; i < 4; i++, vtxOffset++) {
+                float floatJointPaletteIndex = mesh.VertexData[vtxOffset];
+                int jointPaletteIndex = int(floatJointPaletteIndex + 0.5f);
+                int globalJointIndex = jointPalette[jointPaletteIndex];
+                mesh.VertexData[vtxOffset] = (float) globalJointIndex;
+            }
+        }
+    }
+}

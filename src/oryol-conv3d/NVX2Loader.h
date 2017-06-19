@@ -27,6 +27,8 @@ struct NVX2Loader {
     int NumIndices() const;
     /// return the vertex stride in number of bytes
     int VertexStride() const;
+    /// globalize the joint palette indices of a mesh primitive group
+    void GlobalizeJointIndices(const std::string& meshName, int primGroupIndex, const std::vector<int>& jointPalette);
 
     struct PrimGroup {
         int FirstVertex = 0;

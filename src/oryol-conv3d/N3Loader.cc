@@ -438,6 +438,12 @@ N3Loader::LoadMeshes(const std::string& n3AssetDir) {
         }
         this->nvx2Loader.Load(node.Mesh, n3AssetDir);
     }
+    // globalize the joint palette indices
+    for (const auto& node : this->Nodes) {
+        for (const auto& frag : node.SkinFragments) {
+            this->nvx2Loader.GlobalizeJointIndices(node.Mesh, frag.PrimGroup, frag.JointPalette);
+        }
+    }
     this->nvx2Loader.ValidateVertexLayouts();
 }
 
