@@ -608,6 +608,7 @@ N3Loader::ToIRep(IRep& irep) {
             }
         }
     }
+    irep.ComputeCurveMagnitudes();
 
     // copy over vertices
     const int numVertices = this->nvx2Loader.NumVertices();

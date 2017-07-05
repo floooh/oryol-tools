@@ -112,6 +112,7 @@ IRepJsonDumper::Dump(const IRep& irep) {
                 cJSON_AddItemToArray(curves, curve);
                 cJSON_AddItemToObject(curve, "type", cJSON_CreateString(IRep::KeyType::ToString(curveItem.Type)));
                 cJSON_AddItemToObject(curve, "static_key", cJSON_CreateFloatArray(&curveItem.StaticKey.x, 4));
+                cJSON_AddItemToObject(curve, "magnitude", cJSON_CreateFloatArray(&curveItem.Magnitude.x, 4));
                 cJSON_AddItemToObject(curve, "num_keys", cJSON_CreateNumber(curveItem.Keys.size()));
             }
         }

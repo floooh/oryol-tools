@@ -106,11 +106,22 @@ struct IRep {
                 default: return 0;
             }
         }
+        static int NumComponents(Enum t) {
+            switch (t) {
+                case Float: return 1;
+                case Float2: return 2;
+                case Float3: return 3;
+                case Float4: return 4;
+                case Quaternion: return 4;
+                default: return 0;
+            }
+        }
     };
     struct AnimCurve {
         bool IsStatic = false;
         KeyType::Enum Type = KeyType::Invalid;
         glm::vec4 StaticKey;
+        glm::vec4 Magnitude;
         std::vector<glm::vec4> Keys;
     };
     struct AnimClip {
@@ -127,136 +138,21 @@ struct IRep {
     std::vector<float> VertexData;
     std::vector<uint16_t> IndexData;
 
-    //-------------------------------------------------------------------------
-    bool HasVertexAttr(VertexAttr::Code attr) const {
-        for (const auto& comp : this->VertexComponents) {
-            if (comp.Attr == attr) {
-                return true;
-            }
-        }
-        return false;
-    };
-    //-------------------------------------------------------------------------
-    int MaterialIndex(const std::string& name) const {
-        for (size_t i = 0; i < this->Materials.size(); i++) {
-            if (name == this->Materials[i].Name) {
-                return (int)i;
-            }
-        }
-        return -1;
-    };
-    //-------------------------------------------------------------------------
-    int VertexStrideBytes() const {
-        // number of bytes(!) from one vertex to next
-        int stride = 0;
-        for (const auto& comp : this->VertexComponents) {
-            stride += VertexFormat::ByteSize(comp.Format);
-        }
-        return stride;
-    }
-    //-------------------------------------------------------------------------
-    int NumMeshVertices() const {
-        int num = 0;
-        for (const auto& node : this->Nodes) {
-            for (const auto& mesh : node.Meshes) {
-                num += mesh.NumVertices;
-            }
-        }
-        return num;
-    }
-    //-------------------------------------------------------------------------
-    int NumValueProps() const {
-        size_t num = 0;
-        for (const auto& mat : this->Materials) {
-            num += mat.Values.size();
-        }
-        return (int)num;
-    };
-    //-------------------------------------------------------------------------
-    int NumPropValues() const {
-        size_t num = 0;
-        for (const auto& mat : this->Materials) {
-            for (const auto& prop : mat.Values) {
-                num += PropType::NumFloats(prop.Type); 
-            }
-        }
-        return num;
-    };
-    //-------------------------------------------------------------------------
-    int NumTextureProps() const {
-        size_t num = 0;
-        for (const auto& mat : this->Materials) {
-            num += mat.Textures.size();
-        }
-        return (int)num;
-    }
-    //-------------------------------------------------------------------------
-    int NumMeshes() const {
-        size_t num = 0;
-        for (const auto& node : this->Nodes) {
-            num += node.Meshes.size();
-        }   
-        return num;
-    }
-    //-------------------------------------------------------------------------
-    int NumAnimCurves() const {
-        size_t num = 0;
-        for (const auto& clip : this->AnimClips) {
-            num += clip.Curves.size();
-        }
-        return (int)num;
-    }
-    //-------------------------------------------------------------------------
-    int NumAnimCurvesPerClip() const {
-        if (this->AnimClips.empty()) {
-            return 0;
-        }
-        else {
-            return this->AnimClips[0].Curves.size();
-        }
-    }
-    //-------------------------------------------------------------------------
-    int AnimClipKeyStride(int clipIndex) const {
-        int stride = 0;
-        const auto& clip = this->AnimClips[clipIndex];
-        for (const auto& curve : clip.Curves) {
-            if (!curve.IsStatic) {
-                stride += KeyType::ByteSize(curve.Type);
-            }
-        }
-        return stride;
-    }
-    //-------------------------------------------------------------------------
-    int AnimClipLength(int clipIndex) const {
-        for (const auto& curve : this->AnimClips[clipIndex].Curves) {
-            // all curves in the clip either have no keys, or the same number of keys
-            if (!curve.Keys.empty()) {
-                return curve.Keys.size();
-            }
-        }
-        return 0;
-    }
-    //-------------------------------------------------------------------------
-    int AnimKeyDataSize() const {
-        int animKeyDataSize = 0;
-        for (int clipIndex = 0; clipIndex < int(this->AnimClips.size()); clipIndex++) {
-            animKeyDataSize += this->AnimClipKeyStride(clipIndex) * this->AnimClipLength(clipIndex);
-        }
-        return animKeyDataSize;
-    }
-    //-------------------------------------------------------------------------
-    int AnimKeyOffset(int clipIndex, int curveIndex) const {
-        int keyOffset = 0;
-        for (int i = 0; i < clipIndex; i++) {
-            keyOffset += this->AnimClipLength(i) * this->AnimClipKeyStride(i);
-        }
-        const auto& clip = this->AnimClips[clipIndex];
-        for (int i = 0; i < curveIndex; i++) {
-            const auto& curve = clip.Curves[i];
-            if (!curve.IsStatic) {
-                keyOffset += KeyType::ByteSize(curve.Type);
-            }
-        }
-        return keyOffset;
-    }
+    /// compute the curve magnitude values (max(abs(key)) over all keys)
+    void ComputeCurveMagnitudes();
+    /// computed getters
+    bool HasVertexAttr(VertexAttr::Code attr) const;
+    int MaterialIndex(const std::string& name) const;
+    int VertexStrideBytes() const;
+    int NumMeshVertices() const;
+    int NumValueProps() const;
+    int NumPropValues() const;
+    int NumTextureProps() const;
+    int NumMeshes() const;
+    int NumAnimCurves() const;
+    int NumAnimCurvesPerClip() const;
+    int AnimClipKeyStride(int clipIndex) const;
+    int AnimClipLength(int clipIndex) const;
+    int AnimKeyDataSize() const;
+    int AnimKeyOffset(int clipIndex, int curveIndex) const;
 };

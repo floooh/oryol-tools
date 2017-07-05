@@ -1,7 +1,8 @@
 fips_begin_app(oryol-conv3d cmdline)
     fips_files(
         main.cc
-        LoadUtil.h IRep.h 
+        LoadUtil.h 
+        IRep.h IRep.cc
         N3Loader.h N3Loader.cc
         NVX2Loader.h NVX2Loader.cc
         NAX3Loader.h NAX3Loader.cc

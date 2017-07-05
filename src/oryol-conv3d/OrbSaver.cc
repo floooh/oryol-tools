@@ -4,6 +4,7 @@
 #include "OrbSaver.h"
 #include "ExportUtil/Log.h"
 #include "ExportUtil/VertexCodec.h"
+#include <glm/glm.hpp>
 #include <stdio.h>
 
 using namespace OryolTools;
@@ -146,7 +147,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     hdr.IndexDataSize = roundup4(irep.IndexData.size() * sizeof(uint16_t));
     offset += hdr.IndexDataSize;
     hdr.AnimKeyDataOffset = offset;
-    hdr.AnimKeyDataSize = irep.AnimKeyDataSize();
+    hdr.AnimKeyDataSize = irep.AnimKeyDataSize() / 2;   // anim keys are 16-bit signed normalized
     offset += hdr.AnimKeyDataSize;
     hdr.StringPoolDataOffset = offset;
     hdr.StringPoolDataSize = 0;     // this will be filled in at the end!
@@ -283,11 +284,12 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
                 dst.KeyOffset = -1;
             }
             else {
-                dst.KeyOffset = irep.AnimKeyOffset(clipIndex, curveIndex);
+                dst.KeyOffset = irep.AnimKeyOffset(clipIndex, curveIndex) / 2; // anim keys are 16-bit signed normalized
                 Log::FailIf(dst.KeyOffset >= int(hdr.AnimKeyDataSize), "Anim key offset too big\n");
             }
             for (int i = 0; i < 4; i++) {
                 dst.StaticKey[i] = curve.StaticKey[i];
+                dst.Magnitude[i] = curve.Magnitude[i];
             }
             fwrite(&dst, 1, sizeof(dst), fp);
         }
@@ -395,23 +397,15 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
         for (int keyIndex = 0; keyIndex < clipLength; keyIndex++) {
             for (const auto& curve : clip.Curves) {
                 if (!curve.IsStatic) {
-                    const float* keyPtr = &curve.Keys[keyIndex].x;
-                    switch (curve.Type) {
-                        case IRep::KeyType::Float:
-                            fwrite(keyPtr, 1, 1*sizeof(float), fp);
-                            break;
-                        case IRep::KeyType::Float2:
-                            fwrite(keyPtr, 1, 2*sizeof(float), fp);
-                            break;
-                        case IRep::KeyType::Float3:
-                            fwrite(keyPtr, 1, 3*sizeof(float), fp);
-                            break;
-                        case IRep::KeyType::Float4:
-                        case IRep::KeyType::Quaternion:
-                            fwrite(keyPtr, 1, 4*sizeof(float), fp);
-                            break;
-                        default:
-                            break;
+                    const int num = IRep::KeyType::NumComponents(curve.Type);
+                    for (int i = 0; i < num; i++) {
+                        float f = 0.0f;
+                        if (curve.Magnitude[i] > 0.0f) {
+                            f = curve.Keys[keyIndex][i] / curve.Magnitude[i];
+                        }
+                        // f is now between -1.0 and +1.0
+                        glm::i16 p = glm::round(glm::clamp(f*32767.0f, -32768.0f, 32767.0f));
+                        fwrite(&p, 1, sizeof(p), fp);
                     }
                 }
             }
