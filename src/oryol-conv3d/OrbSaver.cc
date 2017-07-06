@@ -147,7 +147,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     hdr.IndexDataSize = roundup4(irep.IndexData.size() * sizeof(uint16_t));
     offset += hdr.IndexDataSize;
     hdr.AnimKeyDataOffset = offset;
-    hdr.AnimKeyDataSize = irep.AnimKeyDataSize() / 2;   // anim keys are 16-bit signed normalized
+    hdr.AnimKeyDataSize = roundup4(irep.AnimKeyDataSize() / 2);   // anim keys are 16-bit signed normalized
     offset += hdr.AnimKeyDataSize;
     hdr.StringPoolDataOffset = offset;
     hdr.StringPoolDataSize = 0;     // this will be filled in at the end!
@@ -410,6 +410,11 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
                 }
             }
         }
+    }
+    // 2-bytes padding if animkey data size isn't multiple of 4
+    if (((irep.AnimKeyDataSize() / 2) & 3) != 0) {
+        int16_t padding = 0;
+        fwrite(&padding, 1, sizeof(padding), fp);
     }
 
     // write string pool
