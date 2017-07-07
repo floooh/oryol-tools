@@ -23,6 +23,9 @@ IRepJsonDumper::Dump(const IRep& irep) {
         }
     }
 
+    // vertex position magnitude (for vertex packing)
+    cJSON_AddItemToObject(root, "vertex_magnitude", cJSON_CreateFloatArray(&irep.VertexMagnitude.x, 3));
+
     // materials
     if (!irep.Materials.empty()) {
         cJSON* mats = cJSON_CreateArray();
@@ -90,7 +93,6 @@ IRepJsonDumper::Dump(const IRep& irep) {
                     cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(meshItem.NumVertices));
                     cJSON_AddItemToObject(mesh, "first_index", cJSON_CreateNumber(meshItem.FirstIndex));
                     cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(meshItem.NumIndices));
-                    cJSON_AddItemToObject(mesh, "size", cJSON_CreateFloatArray(&meshItem.Size.x, 3));
                 }
             }
         }

@@ -151,6 +151,9 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     offset += hdr.AnimKeyDataSize;
     hdr.StringPoolDataOffset = offset;
     hdr.StringPoolDataSize = 0;     // this will be filled in at the end!
+    for (int i = 0; i < 3; i++) {
+        hdr.VertexMagnitude[i] = irep.VertexMagnitude[i];
+    }
     fwrite(&hdr, 1, sizeof(hdr), fp);
 
     // write vertex components
@@ -218,9 +221,6 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
             dst.NumVertices = src.NumVertices;
             dst.FirstIndex = src.FirstIndex;
             dst.NumIndices = src.NumIndices;
-            for (int i = 0; i < 3; i++) {
-                dst.Size[i] = src.Size[i];
-            }
             fwrite(&dst, 1, sizeof(dst), fp);
         }
     }
@@ -320,6 +320,8 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
         uint8_t encodeSpace[1024];
         Log::FailIf(this->DstLayout.ByteSize() >= int(sizeof(encodeSpace)), "Dst vertex stride too big\n");
         int allEncodedBytes = 0;
+        const glm::vec4 scaleOne(1.0f);
+        const glm::vec4 scalePos(1.0f/irep.VertexMagnitude, 1.0f);
         for (int i = 0; i < numVertices; i++) {
             uint8_t* dstPtr = encodeSpace;
             for (const auto& srcComp : irep.VertexComponents) {
@@ -331,41 +333,42 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
                 const int numSrcItems = VertexFormat::NumItems(srcComp.Format);
                 switch (dstFmt) {
                     case VertexFormat::Float:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Float>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Float2:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float2>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Float2>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Float3:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float3>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Float3>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Float4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float4>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Float4>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Byte4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Byte4>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Byte4>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Byte4N:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Byte4N>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Byte4N>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::UByte4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::UByte4>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::UByte4>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::UByte4N:
-                        dstPtr = VertexCodec::Encode<VertexFormat::UByte4N>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::UByte4N>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Short2:
-                        // FIXME: currently hardcoded for 3.15 fixed-point UV coords!
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short2>(dstPtr, 8192.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Short2>(dstPtr, scalePos, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Short2N:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short2N>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        // FIXME: currently hardcoded for 3.15 fixed-point UV coords!
+                        dstPtr = VertexCodec::Encode<VertexFormat::Short2N>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Short4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short4>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        dstPtr = VertexCodec::Encode<VertexFormat::Short4>(dstPtr, scaleOne, srcPtr, numSrcItems);
                         break;
                     case VertexFormat::Short4N:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short4N>(dstPtr, 1.0f, srcPtr, numSrcItems);
+                        // FIXME: currently hardcoded for vertex positions
+                        dstPtr = VertexCodec::Encode<VertexFormat::Short4N>(dstPtr, scalePos, srcPtr, numSrcItems);
                         break;
                     default: break;
                 }

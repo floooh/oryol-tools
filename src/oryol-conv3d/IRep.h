@@ -60,7 +60,6 @@ struct IRep {
         uint32_t FirstIndex = 0;
         uint32_t NumIndices = 0;
         uint32_t Material = 0;
-        glm::vec3 Size;
     };
     struct Bone {
         std::string Name;
@@ -135,10 +134,13 @@ struct IRep {
     std::vector<Bone> Bones;
     std::vector<Node> Nodes;
     std::vector<AnimClip> AnimClips;
+    glm::vec3 VertexMagnitude;
     std::vector<float> VertexData;
     std::vector<uint16_t> IndexData;
 
-    /// compute the curve magnitude values (max(abs(key)) over all keys)
+    /// compute the vertex position magnitude
+    void ComputeVertexMagnitude();
+    /// compute the anim curve magnitude values (max(abs(key)) over all keys)
     void ComputeCurveMagnitudes();
     /// computed getters
     bool HasVertexAttr(VertexAttr::Code attr) const;

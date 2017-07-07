@@ -83,7 +83,7 @@ VertexBuffer::write(VertexAttr::Code attr,
                     int inputStride)
 {
     const int dstStride = this->layout.ByteSize();
-    const float scale = this->layout.Components[attr].Scale;
+    const glm::vec4 scale(this->layout.Components[attr].Scale);
     for (int i = 0; i < numVerts; i++) {
         VertexCodec::Encode<FORMAT>(dstPtr, scale, input, numInputComps);
         dstPtr += dstStride;

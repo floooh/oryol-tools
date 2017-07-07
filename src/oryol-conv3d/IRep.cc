@@ -4,7 +4,25 @@
 #include "IRep.h"
 #include <glm/glm.hpp>
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void
+IRep::ComputeVertexMagnitude() {
+    assert((this->VertexComponents[0].Attr == VertexAttr::Position) &&
+           (this->VertexComponents[0].Format == VertexFormat::Float3));
+    glm::vec3 mag(0.0f);
+    glm::vec3 pos(0.0f);
+    const int numVertices = this->VertexData.size();
+    const int stride = this->VertexStrideBytes() / sizeof(float);
+    for (int i = 0; i < numVertices; i += stride) {
+        pos.x = this->VertexData[i+0];
+        pos.y = this->VertexData[i+1];
+        pos.z = this->VertexData[i+2];
+        mag = glm::max(mag, glm::abs(pos));
+   }
+   this->VertexMagnitude = mag;
+}
+
+//------------------------------------------------------------------------------
 void
 IRep::ComputeCurveMagnitudes() {
     for (auto& clip : this->AnimClips) {
@@ -17,7 +35,7 @@ IRep::ComputeCurveMagnitudes() {
     }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool
 IRep::HasVertexAttr(VertexAttr::Code attr) const {
     for (const auto& comp : this->VertexComponents) {
@@ -28,7 +46,7 @@ IRep::HasVertexAttr(VertexAttr::Code attr) const {
     return false;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::MaterialIndex(const std::string& name) const {
     for (size_t i = 0; i < this->Materials.size(); i++) {
@@ -39,7 +57,7 @@ IRep::MaterialIndex(const std::string& name) const {
     return -1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::VertexStrideBytes() const {
     // number of bytes(!) from one vertex to next
@@ -50,7 +68,7 @@ IRep::VertexStrideBytes() const {
     return stride;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumMeshVertices() const {
     int num = 0;
@@ -62,7 +80,7 @@ IRep::NumMeshVertices() const {
     return num;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumValueProps() const {
     size_t num = 0;
@@ -72,7 +90,7 @@ IRep::NumValueProps() const {
     return (int)num;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumPropValues() const {
     size_t num = 0;
@@ -84,7 +102,7 @@ IRep::NumPropValues() const {
     return num;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumTextureProps() const {
     size_t num = 0;
@@ -94,7 +112,7 @@ IRep::NumTextureProps() const {
     return (int)num;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumMeshes() const {
     size_t num = 0;
@@ -104,7 +122,7 @@ IRep::NumMeshes() const {
     return num;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumAnimCurves() const {
     size_t num = 0;
@@ -114,7 +132,7 @@ IRep::NumAnimCurves() const {
     return (int)num;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::NumAnimCurvesPerClip() const {
     if (this->AnimClips.empty()) {
@@ -125,7 +143,7 @@ IRep::NumAnimCurvesPerClip() const {
     }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::AnimClipKeyStride(int clipIndex) const {
     int stride = 0;
@@ -138,7 +156,7 @@ IRep::AnimClipKeyStride(int clipIndex) const {
     return stride;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::AnimClipLength(int clipIndex) const {
     for (const auto& curve : this->AnimClips[clipIndex].Curves) {
@@ -150,7 +168,7 @@ IRep::AnimClipLength(int clipIndex) const {
     return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::AnimKeyDataSize() const {
     int animKeyDataSize = 0;
@@ -160,7 +178,7 @@ IRep::AnimKeyDataSize() const {
     return animKeyDataSize;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int
 IRep::AnimKeyOffset(int clipIndex, int curveIndex) const {
     int keyOffset = 0;

@@ -634,4 +634,5 @@ N3Loader::ToIRep(IRep& irep) {
     }
     Log::FailIf(curVxIndex != (int)irep.VertexData.size(), "Vertex data size mismatch");
     Log::FailIf(curIxIndex != (int)irep.IndexData.size(), "Index data size mismatch");
+    irep.ComputeVertexMagnitude();
 }
