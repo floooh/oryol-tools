@@ -157,4 +157,6 @@ struct IRep {
     int AnimClipLength(int clipIndex) const;
     int AnimKeyDataSize() const;
     int AnimKeyOffset(int clipIndex, int curveIndex) const;
+    std::vector<std::string> NodeNames() const;
+    std::vector<std::string> ClipNames() const;
 };

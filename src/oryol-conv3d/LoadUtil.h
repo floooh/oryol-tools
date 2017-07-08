@@ -5,16 +5,19 @@ using namespace OryolTools;
 
 //------------------------------------------------------------------------------
 inline const uint8_t* load_file(const std::string& path) {
+    // NOTE: this always adds a zero-byte so that the loaded data
+    // is also a valid C string
     FILE* fp = fopen(path.c_str(), "rb");
     Log::FailIf(!fp, "Failed to open file '%s'\n", path.c_str());
     fseek(fp, 0, SEEK_END);
     int size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    const uint8_t* ptr = (const uint8_t*) malloc(size);
+    uint8_t* ptr = (uint8_t*) malloc(size + 1);
     int bytesRead = fread((void*)ptr, 1, size, fp);
     Log::FailIf(bytesRead != size, "Failed reading file '%s' into memory\n", path.c_str());
     fclose(fp);
-    return ptr; 
+    ptr[size] = 0;
+    return (const uint8_t*) ptr;
 }
 
 //------------------------------------------------------------------------------

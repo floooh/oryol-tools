@@ -195,3 +195,24 @@ IRep::AnimKeyOffset(int clipIndex, int curveIndex) const {
     return keyOffset;
 }
 
+//------------------------------------------------------------------------------
+std::vector<std::string>
+IRep::NodeNames() const {
+    std::vector<std::string> res;
+    res.reserve(this->Nodes.size());
+    for (const auto& node : this->Nodes) {
+        res.push_back(node.Name);
+    }
+    return res;
+}
+
+//------------------------------------------------------------------------------
+std::vector<std::string>
+IRep::ClipNames() const {
+    std::vector<std::string> res;
+    res.reserve(this->AnimClips.size());
+    for (const auto& clip : this->AnimClips) {
+        res.push_back(clip.Name);
+    }
+    return res;
+}

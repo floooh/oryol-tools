@@ -7,7 +7,7 @@
 
 //------------------------------------------------------------------------------
 std::string
-IRepJsonDumper::Dump(const IRep& irep) {
+IRepJsonDumper::DumpIRep(const IRep& irep) {
     cJSON* root = cJSON_CreateObject();
 
     // vertex components
@@ -120,6 +120,29 @@ IRepJsonDumper::Dump(const IRep& irep) {
         }
     }
 
+    char* rawStr = cJSON_Print(root);
+    std::string jsonStr(rawStr);
+    free(rawStr);
+    cJSON_Delete(root);
+    return jsonStr;
+}
+
+//------------------------------------------------------------------------------
+std::string
+IRepJsonDumper::DumpIRepProcessor(const IRep& irep) {
+    cJSON* root = cJSON_CreateObject();
+    cJSON* filter = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "filter", filter);
+    cJSON* nodes = cJSON_CreateArray();
+    cJSON_AddItemToObject(filter, "nodes", nodes);
+    cJSON* clips = cJSON_CreateArray();
+    cJSON_AddItemToObject(filter, "clips", clips);
+    for (const auto& node : irep.Nodes) {
+        cJSON_AddItemToArray(nodes, cJSON_CreateString(node.Name.c_str()));
+    }
+    for (const auto& clip : irep.AnimClips) {
+        cJSON_AddItemToArray(clips, cJSON_CreateString(clip.Name.c_str()));
+    }
     char* rawStr = cJSON_Print(root);
     std::string jsonStr(rawStr);
     free(rawStr);

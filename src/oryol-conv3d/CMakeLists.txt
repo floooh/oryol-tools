@@ -3,6 +3,7 @@ fips_begin_app(oryol-conv3d cmdline)
         main.cc
         LoadUtil.h 
         IRep.h IRep.cc
+        IRepProcessor.h IRepProcessor.cc
         N3Loader.h N3Loader.cc
         NVX2Loader.h NVX2Loader.cc
         NAX3Loader.h NAX3Loader.cc

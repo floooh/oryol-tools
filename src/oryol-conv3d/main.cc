@@ -8,6 +8,7 @@
 #include "N3JsonDumper.h"
 #include "IRepJsonDumper.h"
 #include "OrbSaver.h"
+#include "IRepProcessor.h"
 
 using namespace OryolTools;
 
@@ -18,8 +19,10 @@ int main(int argc, const char** argv) {
     args.AddString("-out", "output filename or path", "out.orb");
     args.AddString("-indir", "optional asset root directory", "");
     args.AddString("-outdir", "optional output asset root directory", "");
+    args.AddString("-proc", "run IRep processor with this JSON file (generate with -dumpproc)", "");
     args.AddBool("-dumpin", "dump input file info to JSON");
-    args.AddBool("-dumpout", "dump output file info to JSON");
+    args.AddBool("-dumpirep", "dump intermediate representation info to JSON");
+    args.AddBool("-dumpproc", "dump processor template to JSON");
     args.AddBool("-dumpvtx", "dump intermediate representation vertex data");
     args.AddBool("-dumpidx", "dump intermediate representation index data");
     args.AddString("-n3dir", "N3 asset root directory (when loading .n3 file)", "");
@@ -49,6 +52,14 @@ int main(int argc, const char** argv) {
         }
     }
 
+    // process the IRep?
+    std::string procJsonFile = args.GetString("-proc");
+    if (!procJsonFile.empty()) {
+        IRepProcessor proc;
+        proc.Load(procJsonFile);
+        proc.Process(irep);
+    }
+
     // save intermediate representation to output file
     OrbSaver orbSaver;
     orbSaver.Layout.Components.push_back(VertexComponent(VertexAttr::Position, VertexFormat::Short4N));
@@ -59,8 +70,12 @@ int main(int argc, const char** argv) {
     orbSaver.Save(args.GetString("-out"), irep);
 
     // dump intermediate representation
-    if (args.HasArg("-dumpout")) {
-        std::string json = IRepJsonDumper::Dump(irep);
+    if (args.HasArg("-dumpproc")) {
+        std::string json = IRepJsonDumper::DumpIRepProcessor(irep);
+        Log::Info("%s\n", json.c_str());
+    }
+    if (args.HasArg("-dumpirep")) {
+        std::string json = IRepJsonDumper::DumpIRep(irep);
         Log::Info("%s\n", json.c_str());
     }
     if (args.HasArg("-dumpvtx")) {
