@@ -1,0 +1,17 @@
+{
+	"filter":	{
+		"nodes":	[
+			"dragon_brood_warrior"
+		],
+		"clips":	[
+			"combat_idle_01", 
+			"death", 
+			"hit", 
+			"run_01", 
+			"skill_01", 
+			"skill_02", 
+			"spawn", 
+			"stunned" 
+		]
+	}
+}
