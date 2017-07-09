@@ -55,10 +55,8 @@ struct IRep {
         std::vector<TextureProperty> Textures;
     };
     struct Mesh {
-        uint32_t FirstVertex = 0;
-        uint32_t NumVertices = 0;
-        uint32_t FirstIndex = 0;
-        uint32_t NumIndices = 0;
+        std::vector<float> VertexData;
+        std::vector<uint16_t> IndexData;
         uint32_t Material = 0;
     };
     struct Bone {
@@ -130,13 +128,11 @@ struct IRep {
     };
 
     std::vector<VertexComponent> VertexComponents;
+    glm::vec3 VertexMagnitude;
     std::vector<Material> Materials;
     std::vector<Bone> Bones;
     std::vector<Node> Nodes;
     std::vector<AnimClip> AnimClips;
-    glm::vec3 VertexMagnitude;
-    std::vector<float> VertexData;
-    std::vector<uint16_t> IndexData;
 
     /// compute the vertex position magnitude
     void ComputeVertexMagnitude();
@@ -146,7 +142,8 @@ struct IRep {
     bool HasVertexAttr(VertexAttr::Code attr) const;
     int MaterialIndex(const std::string& name) const;
     int VertexStrideBytes() const;
-    int NumMeshVertices() const;
+    int NumVertices() const;
+    int NumIndices() const;
     int NumValueProps() const;
     int NumPropValues() const;
     int NumTextureProps() const;

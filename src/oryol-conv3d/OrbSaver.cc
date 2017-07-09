@@ -136,15 +136,11 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     hdr.AnimClipOffset = offset;
     hdr.NumAnimClips = irep.AnimClips.size();
     offset += sizeof(OrbAnimClip) * hdr.NumAnimClips;
-    const int irepVertexStrideInFloats = irep.VertexStrideBytes() / sizeof(float);
-    Log::FailIf((irep.VertexData.size() % irepVertexStrideInFloats) != 0, "Vertex data size mismatch!\n");
-    const int numVertices = irep.VertexData.size() / irepVertexStrideInFloats;
-    Log::FailIf((irep.NumMeshVertices() != numVertices), "Number of vertices mismatch!\n");
     hdr.VertexDataOffset = offset;
-    hdr.VertexDataSize = numVertices * this->DstLayout.ByteSize();
+    hdr.VertexDataSize = irep.NumVertices() * this->DstLayout.ByteSize();
     offset += hdr.VertexDataSize;
     hdr.IndexDataOffset = offset;
-    hdr.IndexDataSize = roundup4(irep.IndexData.size() * sizeof(uint16_t));
+    hdr.IndexDataSize = roundup4(irep.NumIndices() * sizeof(uint16_t));
     offset += hdr.IndexDataSize;
     hdr.AnimKeyDataOffset = offset;
     hdr.AnimKeyDataSize = roundup4(irep.AnimKeyDataSize() / 2);   // anim keys are 16-bit signed normalized
@@ -212,16 +208,21 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     }
 
     // write meshes
+    int curVertex = 0;
+    int curIndex = 0;
+    const int srcVertexStride = irep.VertexStrideBytes() / sizeof(float);
     Log::FailIf(ftell(fp) != hdr.MeshOffset, "File offset error (MeshOffset)\n");
     for (const auto& node : irep.Nodes) {
         for (const auto& src : node.Meshes) {
             OrbMesh dst;
             dst.Material = src.Material;
-            dst.FirstVertex = src.FirstVertex;
-            dst.NumVertices = src.NumVertices;
-            dst.FirstIndex = src.FirstIndex;
-            dst.NumIndices = src.NumIndices;
+            dst.FirstVertex = curVertex;
+            dst.NumVertices = src.VertexData.size() / srcVertexStride;
+            dst.FirstIndex = curIndex;
+            dst.NumIndices = src.IndexData.size();
             fwrite(&dst, 1, sizeof(dst), fp);
+            curVertex += dst.NumVertices;
+            curIndex += dst.NumIndices;
         }
     }
 
@@ -315,67 +316,71 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     // write the vertex data
     {
         Log::FailIf(ftell(fp) != hdr.VertexDataOffset, "File offset error (VertexDataOffset)\n");
-        const float* srcStart = &(irep.VertexData[0]);
-        const int srcStride = irep.VertexStrideBytes() / sizeof(float);
         uint8_t encodeSpace[1024];
         Log::FailIf(this->DstLayout.ByteSize() >= int(sizeof(encodeSpace)), "Dst vertex stride too big\n");
         int allEncodedBytes = 0;
         const glm::vec4 scaleOne(1.0f);
         const glm::vec4 scalePos(1.0f/irep.VertexMagnitude, 1.0f);
-        for (int i = 0; i < numVertices; i++) {
-            uint8_t* dstPtr = encodeSpace;
-            for (const auto& srcComp : irep.VertexComponents) {
-                if (!this->DstLayout.HasAttr(srcComp.Attr)) {
-                    continue;
-                }
-                VertexFormat::Code dstFmt = this->DstLayout.AttrFormat(srcComp.Attr);
-                const float* srcPtr = srcStart + i*srcStride + srcComp.Offset/4;
-                const int numSrcItems = VertexFormat::NumItems(srcComp.Format);
-                switch (dstFmt) {
-                    case VertexFormat::Float:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Float2:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float2>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Float3:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float3>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Float4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Float4>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Byte4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Byte4>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Byte4N:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Byte4N>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::UByte4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::UByte4>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::UByte4N:
-                        dstPtr = VertexCodec::Encode<VertexFormat::UByte4N>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Short2:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short2>(dstPtr, scalePos, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Short2N:
-                        // FIXME: currently hardcoded for 3.15 fixed-point UV coords!
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short2N>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Short4:
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short4>(dstPtr, scaleOne, srcPtr, numSrcItems);
-                        break;
-                    case VertexFormat::Short4N:
-                        // FIXME: currently hardcoded for vertex positions
-                        dstPtr = VertexCodec::Encode<VertexFormat::Short4N>(dstPtr, scalePos, srcPtr, numSrcItems);
-                        break;
-                    default: break;
+        for (const auto& node : irep.Nodes) {
+            for (const auto& mesh : node.Meshes) {
+                const float* srcStart = &mesh.VertexData[0];
+                const int numVertices = mesh.VertexData.size() / srcVertexStride;
+                for (int i = 0; i < numVertices; i++) {
+                    uint8_t* dstPtr = encodeSpace;
+                    for (const auto& srcComp : irep.VertexComponents) {
+                        if (!this->DstLayout.HasAttr(srcComp.Attr)) {
+                            continue;
+                        }
+                        VertexFormat::Code dstFmt = this->DstLayout.AttrFormat(srcComp.Attr);
+                        const float* srcPtr = srcStart + i*srcVertexStride + srcComp.Offset/4;
+                        const int numSrcItems = VertexFormat::NumItems(srcComp.Format);
+                        switch (dstFmt) {
+                            case VertexFormat::Float:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Float>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Float2:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Float2>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Float3:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Float3>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Float4:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Float4>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Byte4:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Byte4>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Byte4N:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Byte4N>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::UByte4:
+                                dstPtr = VertexCodec::Encode<VertexFormat::UByte4>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::UByte4N:
+                                dstPtr = VertexCodec::Encode<VertexFormat::UByte4N>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Short2:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Short2>(dstPtr, scalePos, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Short2N:
+                                // FIXME: currently hardcoded for 3.15 fixed-point UV coords!
+                                dstPtr = VertexCodec::Encode<VertexFormat::Short2N>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Short4:
+                                dstPtr = VertexCodec::Encode<VertexFormat::Short4>(dstPtr, scaleOne, srcPtr, numSrcItems);
+                                break;
+                            case VertexFormat::Short4N:
+                                // FIXME: currently hardcoded for vertex positions
+                                dstPtr = VertexCodec::Encode<VertexFormat::Short4N>(dstPtr, scalePos, srcPtr, numSrcItems);
+                                break;
+                            default: break;
+                        }
+                    }
+                    const int numEncodedBytes = dstPtr - encodeSpace;
+                    allEncodedBytes += numEncodedBytes;
+                    fwrite(encodeSpace, 1, numEncodedBytes, fp);
                 }
             }
-            const int numEncodedBytes = dstPtr - encodeSpace;
-            allEncodedBytes += numEncodedBytes;
-            fwrite(encodeSpace, 1, numEncodedBytes, fp);
         }
         Log::FailIf(allEncodedBytes != int(hdr.VertexDataSize), "Encoded destination length error!\n");
     }
@@ -383,9 +388,18 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     // write vertex indices
     {
         Log::FailIf(ftell(fp) != hdr.IndexDataOffset, "File offset error (IndexDataOffset)\n");
-        const uint16_t* ptr = &irep.IndexData[0];
-        int numBytes = irep.IndexData.size() * sizeof(uint16_t);
-        fwrite(ptr, 1, numBytes, fp);
+        uint16_t baseVertexIndex = 0;
+        int numBytes = 0;
+        for (const auto& node : irep.Nodes) {
+            for (const auto& mesh : node.Meshes) {
+                for (uint16_t li : mesh.IndexData) {
+                    uint16_t vi = li + baseVertexIndex;
+                    fwrite(&vi, 1, sizeof(vi), fp);
+                    numBytes += 2;
+                }
+                baseVertexIndex += mesh.VertexData.size() / srcVertexStride;
+            }
+        }
         if ((numBytes & 3) != 0) {
             uint16_t padding = 0;
             fwrite(&padding, 1, sizeof(padding), fp);

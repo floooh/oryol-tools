@@ -537,32 +537,31 @@ N3Loader::ToIRep(IRep& irep) {
             }
 
             // setup mesh
-            if (n3Node.SkinFragments.empty()) {
-                // no skin fragments...
-                auto nvx2PrimGroup = this->nvx2Loader.AbsPrimGroup(n3Node.Mesh, n3Node.PrimGroup);
+            const int vertexStride = this->nvx2Loader.VertexStride() / sizeof(float);
+            const auto& nvx2Mesh = this->nvx2Loader.MeshByName(n3Node.Mesh);
+            for (const auto& nvx2PrimGroup : nvx2Mesh.PrimGroups) {
                 IRep::Mesh mesh;
-                mesh.FirstVertex = nvx2PrimGroup.FirstVertex;
-                mesh.NumVertices = nvx2PrimGroup.NumVertices;
-                mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
-                mesh.NumIndices = nvx2PrimGroup.NumIndices;
                 mesh.Material = irep.Materials.size() - 1;
-                irep.Nodes.back().Meshes.push_back(mesh);
-            }
-            else {
-                // one mesh per skin fragment
-                for (const auto& frag : n3Node.SkinFragments) {
-                    auto nvx2PrimGroup = this->nvx2Loader.AbsPrimGroup(n3Node.Mesh, frag.PrimGroup);
-                    IRep::Mesh mesh;
-                    mesh.FirstVertex = nvx2PrimGroup.FirstVertex;
-                    mesh.NumVertices = nvx2PrimGroup.NumVertices;
-                    mesh.FirstIndex = nvx2PrimGroup.FirstIndex;
-                    mesh.NumIndices = nvx2PrimGroup.NumIndices;
-                    mesh.Material = irep.Materials.size() - 1;
-                    irep.Nodes.back().Meshes.push_back(mesh);
+                mesh.VertexData.reserve(nvx2PrimGroup.NumVertices);
+                mesh.IndexData.reserve(nvx2PrimGroup.NumIndices);
+                int vi = nvx2PrimGroup.FirstVertex * vertexStride;
+                const int tovi = vi + nvx2PrimGroup.NumVertices * vertexStride;
+                for (; vi < tovi; vi += vertexStride) {
+                    for (int i = 0; i < vertexStride; i++) {
+                        mesh.VertexData.push_back(nvx2Mesh.VertexData[vi + i]);
+                    }
                 }
+                int ii = nvx2PrimGroup.FirstIndex;
+                const int toii = ii + nvx2PrimGroup.NumIndices;
+                for (; ii < toii; ii++) {
+                    uint16_t index = nvx2Mesh.IndexData[ii] - nvx2PrimGroup.FirstVertex;
+                    mesh.IndexData.push_back(index);
+                }
+                irep.Nodes.back().Meshes.push_back(mesh);
             }
         }
     }
+    irep.ComputeVertexMagnitude();
 
     // character skeleton joints, find first node with joints (there should only be one)
     for (const auto& n3Node : this->Nodes) {
@@ -609,30 +608,4 @@ N3Loader::ToIRep(IRep& irep) {
         }
     }
     irep.ComputeCurveMagnitudes();
-
-    // copy over vertices
-    const int numVertices = this->nvx2Loader.NumVertices();
-    /// FIXME: need to fix this!? need to separate between mesh and element range!
-    Log::FailIf(numVertices >= (1<<16)-1, "Too many vertices in mesh (>64k)!");
-
-    const int numIndices = this->nvx2Loader.NumIndices();
-    const int vertexStride = this->nvx2Loader.VertexStride();
-    const int numVertexFloats = (numVertices * vertexStride) / sizeof(float);
-    irep.VertexData.resize(numVertexFloats);
-    irep.IndexData.resize(numIndices);
-    int curVxIndex = 0;
-    int curIxIndex = 0;
-    int meshBaseIndex = 0;
-    for (const auto& nvx2Mesh : this->nvx2Loader.Meshes) {
-        for (float val : nvx2Mesh.VertexData) {
-            irep.VertexData[curVxIndex++] = val;
-        }
-        for (uint16_t val : nvx2Mesh.IndexData) {
-            irep.IndexData[curIxIndex++] = val + meshBaseIndex;
-        }
-        meshBaseIndex += nvx2Mesh.NumVertices;
-    }
-    Log::FailIf(curVxIndex != (int)irep.VertexData.size(), "Vertex data size mismatch");
-    Log::FailIf(curIxIndex != (int)irep.IndexData.size(), "Index data size mismatch");
-    irep.ComputeVertexMagnitude();
 }

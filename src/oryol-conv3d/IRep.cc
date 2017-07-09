@@ -2,7 +2,10 @@
 //  IRep.cc
 //------------------------------------------------------------------------------
 #include "IRep.h"
+#include "ExportUtil/Log.h"
 #include <glm/glm.hpp>
+
+using namespace OryolTools;
 
 //------------------------------------------------------------------------------
 void
@@ -11,15 +14,18 @@ IRep::ComputeVertexMagnitude() {
            (this->VertexComponents[0].Format == VertexFormat::Float3));
     glm::vec3 mag(0.0f);
     glm::vec3 pos(0.0f);
-    const int numVertices = this->VertexData.size();
     const int stride = this->VertexStrideBytes() / sizeof(float);
-    for (int i = 0; i < numVertices; i += stride) {
-        pos.x = this->VertexData[i+0];
-        pos.y = this->VertexData[i+1];
-        pos.z = this->VertexData[i+2];
-        mag = glm::max(mag, glm::abs(pos));
-   }
-   this->VertexMagnitude = mag;
+    for (const auto& node : this->Nodes) {
+        for (const auto& mesh : node.Meshes) {
+            for (int i = 0; i < int(mesh.VertexData.size()); i += stride) {
+                pos.x = mesh.VertexData[i + 0];
+                pos.y = mesh.VertexData[i + 1];
+                pos.z = mesh.VertexData[i + 2];
+                mag = glm::max(mag, glm::abs(pos));
+            }
+        }
+    }
+   this->VertexMagnitude = glm::vec3(mag);
 }
 
 //------------------------------------------------------------------------------
@@ -70,11 +76,26 @@ IRep::VertexStrideBytes() const {
 
 //------------------------------------------------------------------------------
 int
-IRep::NumMeshVertices() const {
+IRep::NumVertices() const {
+    int num = 0;
+    const int stride = this->VertexStrideBytes() / sizeof(float);
+    for (const auto& node : this->Nodes) {
+        for (const auto& mesh : node.Meshes) {
+            Log::FailIf((mesh.VertexData.size() % stride) != 0, "Vertex data size isn't multiple of vertex stride!\n");
+            num += mesh.VertexData.size() / stride;
+        }
+    }
+    return num;
+}
+
+//------------------------------------------------------------------------------
+int
+IRep::NumIndices() const {
     int num = 0;
     for (const auto& node : this->Nodes) {
         for (const auto& mesh : node.Meshes) {
-            num += mesh.NumVertices;
+            Log::FailIf((mesh.IndexData.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
+            num += mesh.IndexData.size();
         }
     }
     return num;

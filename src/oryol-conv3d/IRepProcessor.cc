@@ -35,6 +35,7 @@ IRepProcessor::Load(const string& path) {
     // load file as zero-terminated string
     const char* str = (const char*) load_file(path);
     cJSON* json = cJSON_Parse(str);
+    free_file_data((const uint8_t*)str);
     Log::FailIf(!json, "Failed to parse JSON file '%s' with '%s'\n", path.c_str(), cJSON_GetErrorPtr()); 
     cJSON* node;
     if ((node = cJSONUtils_GetPointer(json, "/filter/nodes"))) {
@@ -116,50 +117,7 @@ IRepProcessor::RemoveNodes(IRep& irep, const vector<string>& nodeNames) {
         }
     }
 
-    // remove all orphaned vertices and indices, and fix up the
-    // vertex/index indices in remaining meshes
-    const int stride = irep.VertexStrideBytes() / sizeof(float);
-    for (const auto& n0 : irep.Nodes) {
-        if (n0.Parent == -2) {
-            for (const auto& m0 : n0.Meshes) {
-                const uint32_t vi0 = m0.FirstVertex * stride;
-                const uint32_t vi1 = vi0 + m0.NumVertices * stride;
-                Log::FailIf(vi1 > irep.VertexData.size(), "IRepProcessor::RemoveNodes(): vertex range removal overflow!\n");
-                irep.VertexData.erase(irep.VertexData.begin() + vi0, irep.VertexData.begin() + vi1);
-                const uint32_t ii0 = m0.FirstIndex;
-                const uint32_t ii1 = ii0 + m0.NumIndices;
-                Log::FailIf(ii1 > irep.IndexData.size(), "IRepProcessor::RemoveNodes(): index range removal overflow!\n");
-                irep.IndexData.erase(irep.IndexData.begin() + ii0, irep.IndexData.begin() + ii1);
-
-                // fixup vertex/index indices in remaining meshes
-                for (auto& n1 : irep.Nodes) {
-                    for (auto& m1 : n1.Meshes) {
-                        if (m1.FirstVertex > m0.FirstVertex) {
-                            m1.FirstVertex -= m0.NumVertices;
-                            Log::FailIf((m1.FirstVertex+m1.NumVertices)*stride > irep.VertexData.size(),
-                                "IRepProcessor::RemoveNodes(): vertex range fixup overflow error!\n");
-                        }
-                        if (m1.FirstIndex > m0.FirstIndex) {
-                            m1.FirstIndex -= m0.NumIndices;
-                            Log::FailIf((m1.FirstIndex+m1.NumIndices) > irep.IndexData.size(),
-                                "IRepProcessor::RemoveNodes(): index range fixup overflow error!\n");
-                        }
-                    }
-                }
-
-                // fixup remaining indices
-                const uint32_t numVertices = irep.VertexData.size() / stride;
-                for (uint16_t& vi : irep.IndexData) {
-                    if (vi > m0.FirstIndex) {
-                        vi -= m0.NumVertices;
-                        Log::FailIf(vi >= numVertices, "IRepProcessor::RemoveNodes: index fixup overflow error!\n");
-                    }
-                }
-            }
-        }
-    }
-
-    // can now remove all nodes marked for removal
+    // remove all nodes marked for removal
     for (auto iter = irep.Nodes.begin(); iter != irep.Nodes.end();) {
         if (-2 == iter->Parent) {
             irep.Nodes.erase(iter);

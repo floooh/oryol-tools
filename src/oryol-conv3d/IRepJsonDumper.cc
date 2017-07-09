@@ -89,10 +89,8 @@ IRepJsonDumper::DumpIRep(const IRep& irep) {
                     cJSON* mesh = cJSON_CreateObject();
                     cJSON_AddItemToArray(meshes, mesh);
                     cJSON_AddItemToObject(mesh, "material", cJSON_CreateNumber(meshItem.Material));
-                    cJSON_AddItemToObject(mesh, "first_vertex", cJSON_CreateNumber(meshItem.FirstVertex));
-                    cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(meshItem.NumVertices));
-                    cJSON_AddItemToObject(mesh, "first_index", cJSON_CreateNumber(meshItem.FirstIndex));
-                    cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(meshItem.NumIndices));
+                    cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(meshItem.VertexData.size()));
+                    cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(meshItem.IndexData.size()));
                 }
             }
         }

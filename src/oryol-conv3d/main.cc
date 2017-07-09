@@ -83,22 +83,32 @@ int main(int argc, const char** argv) {
         for (const auto& comp : irep.VertexComponents) {
             stride += VertexFormat::ByteSize(comp.Format) / sizeof(float);
         }
-        Log::FailIf((irep.VertexData.size() % stride) != 0, "Vertex data size isn't multiple of vertex stride!\n");
-        const int numVertices = irep.VertexData.size() / stride;
-        for (int i = 0; i < numVertices; i++) {
-            Log::Info("%d: ", i);
-            for (int j = 0; j < stride; j++) {
-                Log::Info("%.4f ", irep.VertexData[i * stride + j]);
+        int vertexIndex = 0;
+        for (const auto& node : irep.Nodes) {
+            for (const auto& mesh : node.Meshes) {
+                Log::FailIf((mesh.VertexData.size() % stride) != 0, "Vertex data size isn't multiple of vertex stride!\n");
+                const int numVertices = mesh.VertexData.size() / stride;
+                for (int i = 0; i < numVertices; i++, vertexIndex++) {
+                    Log::Info("%d: ", vertexIndex);
+                    for (int j = 0; j < stride; j++) {
+                        Log::Info("%.4f ", mesh.VertexData[i * stride + j]);
+                    }
+                    Log::Info("\n");
+                }
             }
-            Log::Info("\n");
         }
         Log::Info("\n");
     }
     if (args.HasArg("-dumpidx")) {
-        Log::FailIf((irep.IndexData.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
-        const int numTris = irep.IndexData.size() / 3;
-        for (int i = 0; i < numTris; i++) {
-            Log::Info("%d: %d %d %d\n", i, irep.IndexData[i*3+0], irep.IndexData[i*3+1], irep.IndexData[i*3+2]);
+        int triIndex;
+        for (const auto& node : irep.Nodes) {
+            for (const auto& mesh : node.Meshes) {
+                Log::FailIf((mesh.IndexData.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
+                const int numTris = mesh.IndexData.size() / 3;
+                for (int i = 0; i < numTris; i++) {
+                    Log::Info("%d: %d %d %d\n", triIndex, mesh.IndexData[i*3+0], mesh.IndexData[i*3+1], mesh.IndexData[i*3+2]);
+                }
+            }
         }
     }
 
