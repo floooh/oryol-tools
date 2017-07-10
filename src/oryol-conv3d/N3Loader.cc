@@ -471,7 +471,6 @@ N3Loader::ToIRep(IRep& irep) {
         IRep::VertexComponent dstComp;
         dstComp.Attr = srcComp.Attr;
         dstComp.Format = srcComp.DstFormat;
-        dstComp.Offset = srcComp.DstOffset;
         irep.VertexComponents.push_back(dstComp);
         Log::FailIf(VertexFormat::IsPacked(dstComp.Format), "IRep vertices must not be packed!\n");
     }
@@ -539,23 +538,30 @@ N3Loader::ToIRep(IRep& irep) {
             // setup mesh
             const int vertexStride = this->nvx2Loader.VertexStride() / sizeof(float);
             const auto& nvx2Mesh = this->nvx2Loader.MeshByName(n3Node.Mesh);
-            for (const auto& nvx2PrimGroup : nvx2Mesh.PrimGroups) {
+            for (const auto& pg : nvx2Mesh.PrimGroups) {
                 IRep::Mesh mesh;
                 mesh.Material = irep.Materials.size() - 1;
-                mesh.VertexData.reserve(nvx2PrimGroup.NumVertices);
-                mesh.IndexData.reserve(nvx2PrimGroup.NumIndices);
-                int vi = nvx2PrimGroup.FirstVertex * vertexStride;
-                const int tovi = vi + nvx2PrimGroup.NumVertices * vertexStride;
-                for (; vi < tovi; vi += vertexStride) {
-                    for (int i = 0; i < vertexStride; i++) {
-                        mesh.VertexData.push_back(nvx2Mesh.VertexData[vi + i]);
+
+                // write vertices
+                mesh.Vertices.reserve(pg.NumVertices);
+                for (int vi = pg.FirstVertex; vi < (pg.FirstVertex + pg.NumVertices); vi++) {
+                    IRep::Vertex vtx;
+                    for (const auto& comp : nvx2Mesh.Components) {
+                        const int srcIndex = vi*vertexStride + comp.DstOffset/sizeof(float);
+                        for (int i = 0; i < VertexFormat::NumItems(comp.DstFormat); i++) {
+                            vtx[comp.Attr][i] = nvx2Mesh.VertexData[srcIndex + i];
+                        }
                     }
+                    mesh.Vertices.push_back(vtx);
                 }
-                int ii = nvx2PrimGroup.FirstIndex;
-                const int toii = ii + nvx2PrimGroup.NumIndices;
+
+                // write indices
+                mesh.Indices.reserve(pg.NumIndices);
+                int ii = pg.FirstIndex;
+                const int toii = ii + pg.NumIndices;
                 for (; ii < toii; ii++) {
-                    uint16_t index = nvx2Mesh.IndexData[ii] - nvx2PrimGroup.FirstVertex;
-                    mesh.IndexData.push_back(index);
+                    uint16_t index = nvx2Mesh.IndexData[ii] - pg.FirstVertex;
+                    mesh.Indices.push_back(index);
                 }
                 irep.Nodes.back().Meshes.push_back(mesh);
             }

@@ -12,15 +12,11 @@ void
 IRep::ComputeVertexMagnitude() {
     assert((this->VertexComponents[0].Attr == VertexAttr::Position) &&
            (this->VertexComponents[0].Format == VertexFormat::Float3));
-    glm::vec3 mag(0.0f);
-    glm::vec3 pos(0.0f);
-    const int stride = this->VertexStrideBytes() / sizeof(float);
+    glm::vec4 mag(0.0f);
     for (const auto& node : this->Nodes) {
         for (const auto& mesh : node.Meshes) {
-            for (int i = 0; i < int(mesh.VertexData.size()); i += stride) {
-                pos.x = mesh.VertexData[i + 0];
-                pos.y = mesh.VertexData[i + 1];
-                pos.z = mesh.VertexData[i + 2];
+            for (const auto& vtx : mesh.Vertices) {
+                const glm::vec4& pos = vtx[VertexAttr::Position];
                 mag = glm::max(mag, glm::abs(pos));
             }
         }
@@ -65,24 +61,11 @@ IRep::MaterialIndex(const std::string& name) const {
 
 //------------------------------------------------------------------------------
 int
-IRep::VertexStrideBytes() const {
-    // number of bytes(!) from one vertex to next
-    int stride = 0;
-    for (const auto& comp : this->VertexComponents) {
-        stride += VertexFormat::ByteSize(comp.Format);
-    }
-    return stride;
-}
-
-//------------------------------------------------------------------------------
-int
 IRep::NumVertices() const {
     int num = 0;
-    const int stride = this->VertexStrideBytes() / sizeof(float);
     for (const auto& node : this->Nodes) {
         for (const auto& mesh : node.Meshes) {
-            Log::FailIf((mesh.VertexData.size() % stride) != 0, "Vertex data size isn't multiple of vertex stride!\n");
-            num += mesh.VertexData.size() / stride;
+            num += mesh.Vertices.size();
         }
     }
     return num;
@@ -94,8 +77,8 @@ IRep::NumIndices() const {
     int num = 0;
     for (const auto& node : this->Nodes) {
         for (const auto& mesh : node.Meshes) {
-            Log::FailIf((mesh.IndexData.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
-            num += mesh.IndexData.size();
+            Log::FailIf((mesh.Indices.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
+            num += mesh.Indices.size();
         }
     }
     return num;

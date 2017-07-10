@@ -19,7 +19,6 @@ IRepJsonDumper::DumpIRep(const IRep& irep) {
             cJSON_AddItemToArray(comps, comp);
             cJSON_AddItemToObject(comp, "attr", cJSON_CreateString(VertexAttr::ToString(item.Attr)));
             cJSON_AddItemToObject(comp, "format", cJSON_CreateString(VertexFormat::ToString(item.Format)));
-            cJSON_AddItemToObject(comp, "offset", cJSON_CreateNumber(item.Offset));
         }
     }
 
@@ -89,8 +88,8 @@ IRepJsonDumper::DumpIRep(const IRep& irep) {
                     cJSON* mesh = cJSON_CreateObject();
                     cJSON_AddItemToArray(meshes, mesh);
                     cJSON_AddItemToObject(mesh, "material", cJSON_CreateNumber(meshItem.Material));
-                    cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(meshItem.VertexData.size()));
-                    cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(meshItem.IndexData.size()));
+                    cJSON_AddItemToObject(mesh, "num_vertices", cJSON_CreateNumber(meshItem.Vertices.size()));
+                    cJSON_AddItemToObject(mesh, "num_indices", cJSON_CreateNumber(meshItem.Indices.size()));
                 }
             }
         }

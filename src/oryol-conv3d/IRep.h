@@ -6,6 +6,7 @@
 */
 #include <string>
 #include <vector>
+#include <array>
 #include <glm/vec4.hpp>
 #include <glm/vec3.hpp>
 #include "ExportUtil/Vertex.h"
@@ -14,7 +15,6 @@ struct IRep {
     struct VertexComponent {
         VertexAttr::Code Attr = VertexAttr::Invalid;
         VertexFormat::Code Format = VertexFormat::Invalid;
-        int Offset = 0; // in bytes!
     };
 
     struct PropType { 
@@ -54,9 +54,10 @@ struct IRep {
         std::vector<ValueProperty> Values;
         std::vector<TextureProperty> Textures;
     };
+    typedef std::array<glm::vec4, VertexAttr::Num> Vertex;
     struct Mesh {
-        std::vector<float> VertexData;
-        std::vector<uint16_t> IndexData;
+        std::vector<Vertex> Vertices;
+        std::vector<uint16_t> Indices;
         uint32_t Material = 0;
     };
     struct Bone {
@@ -141,7 +142,6 @@ struct IRep {
     /// computed getters
     bool HasVertexAttr(VertexAttr::Code attr) const;
     int MaterialIndex(const std::string& name) const;
-    int VertexStrideBytes() const;
     int NumVertices() const;
     int NumIndices() const;
     int NumValueProps() const;

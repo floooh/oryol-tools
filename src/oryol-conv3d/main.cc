@@ -79,19 +79,16 @@ int main(int argc, const char** argv) {
         Log::Info("%s\n", json.c_str());
     }
     if (args.HasArg("-dumpvtx")) {
-        int stride = 0;
-        for (const auto& comp : irep.VertexComponents) {
-            stride += VertexFormat::ByteSize(comp.Format) / sizeof(float);
-        }
         int vertexIndex = 0;
         for (const auto& node : irep.Nodes) {
             for (const auto& mesh : node.Meshes) {
-                Log::FailIf((mesh.VertexData.size() % stride) != 0, "Vertex data size isn't multiple of vertex stride!\n");
-                const int numVertices = mesh.VertexData.size() / stride;
-                for (int i = 0; i < numVertices; i++, vertexIndex++) {
+                const int numVertices = mesh.Vertices.size();
+                for (int vi = 0; vi < numVertices; vi++, vertexIndex++) {
                     Log::Info("%d: ", vertexIndex);
-                    for (int j = 0; j < stride; j++) {
-                        Log::Info("%.4f ", mesh.VertexData[i * stride + j]);
+                    for (const auto& comp : irep.VertexComponents) {
+                        for (int i = 0; i < VertexFormat::NumItems(comp.Format); i++) {
+                            Log::Info("%.4f ", mesh.Vertices[vi][comp.Attr][i]);
+                        }
                     }
                     Log::Info("\n");
                 }
@@ -100,13 +97,13 @@ int main(int argc, const char** argv) {
         Log::Info("\n");
     }
     if (args.HasArg("-dumpidx")) {
-        int triIndex;
+        int triIndex = 0;
         for (const auto& node : irep.Nodes) {
             for (const auto& mesh : node.Meshes) {
-                Log::FailIf((mesh.IndexData.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
-                const int numTris = mesh.IndexData.size() / 3;
-                for (int i = 0; i < numTris; i++) {
-                    Log::Info("%d: %d %d %d\n", triIndex, mesh.IndexData[i*3+0], mesh.IndexData[i*3+1], mesh.IndexData[i*3+2]);
+                Log::FailIf((mesh.Indices.size() % 3) != 0, "Index data size isn't multiple of 3!\n");
+                const int numTris = mesh.Indices.size() / 3;
+                for (int i = 0; i < numTris; i++, triIndex++) {
+                    Log::Info("%d: %d %d %d\n", triIndex, mesh.Indices[i*3+0], mesh.Indices[i*3+1], mesh.Indices[i*3+2]);
                 }
             }
         }

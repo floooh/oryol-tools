@@ -210,16 +210,15 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
     // write meshes
     int curVertex = 0;
     int curIndex = 0;
-    const int srcVertexStride = irep.VertexStrideBytes() / sizeof(float);
     Log::FailIf(ftell(fp) != hdr.MeshOffset, "File offset error (MeshOffset)\n");
     for (const auto& node : irep.Nodes) {
         for (const auto& src : node.Meshes) {
             OrbMesh dst;
             dst.Material = src.Material;
             dst.FirstVertex = curVertex;
-            dst.NumVertices = src.VertexData.size() / srcVertexStride;
+            dst.NumVertices = src.Vertices.size();
             dst.FirstIndex = curIndex;
-            dst.NumIndices = src.IndexData.size();
+            dst.NumIndices = src.Indices.size();
             fwrite(&dst, 1, sizeof(dst), fp);
             curVertex += dst.NumVertices;
             curIndex += dst.NumIndices;
@@ -323,8 +322,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
         const glm::vec4 scalePos(1.0f/irep.VertexMagnitude, 1.0f);
         for (const auto& node : irep.Nodes) {
             for (const auto& mesh : node.Meshes) {
-                const float* srcStart = &mesh.VertexData[0];
-                const int numVertices = mesh.VertexData.size() / srcVertexStride;
+                const int numVertices = mesh.Vertices.size();
                 for (int i = 0; i < numVertices; i++) {
                     uint8_t* dstPtr = encodeSpace;
                     for (const auto& srcComp : irep.VertexComponents) {
@@ -332,7 +330,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
                             continue;
                         }
                         VertexFormat::Code dstFmt = this->DstLayout.AttrFormat(srcComp.Attr);
-                        const float* srcPtr = srcStart + i*srcVertexStride + srcComp.Offset/4;
+                        const float* srcPtr = &(mesh.Vertices[i][srcComp.Attr].x);
                         const int numSrcItems = VertexFormat::NumItems(srcComp.Format);
                         switch (dstFmt) {
                             case VertexFormat::Float:
@@ -392,12 +390,12 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
         int numBytes = 0;
         for (const auto& node : irep.Nodes) {
             for (const auto& mesh : node.Meshes) {
-                for (uint16_t li : mesh.IndexData) {
+                for (uint16_t li : mesh.Indices) {
                     uint16_t vi = li + baseVertexIndex;
                     fwrite(&vi, 1, sizeof(vi), fp);
                     numBytes += 2;
                 }
-                baseVertexIndex += mesh.VertexData.size() / srcVertexStride;
+                baseVertexIndex += mesh.Vertices.size();
             }
         }
         if ((numBytes & 3) != 0) {
