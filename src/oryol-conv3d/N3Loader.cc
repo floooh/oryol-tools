@@ -18,15 +18,15 @@ N3Loader::Load(const std::string& n3AssetName, const std::string& n3AssetDir, IR
 
     std::string path = n3AssetDir + "/models/" + n3AssetName;
 
-    this->LoadN3(path);
-    this->LoadMeshes(n3AssetDir);
-    this->LoadAnims(n3AssetDir);
-    this->ToIRep(irep);
+    this->loadN3(path);
+    this->loadMeshes(n3AssetDir);
+    this->loadAnims(n3AssetDir);
+    this->toIRep(irep);
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::LoadN3(const std::string& path) {
+N3Loader::loadN3(const std::string& path) {
     FILE* fp = fopen(path.c_str(), "rb");
     Log::FailIf(!fp, "Failed to open N3 file '%s'\n", path.c_str());
 
@@ -71,12 +71,12 @@ N3Loader::LoadN3(const std::string& path) {
             // generic data tag
             default:
                 switch (this->Nodes.back().ClassTag) {
-                    case 'TRFN':    this->ParseTransformNodeTag(fp, tag); break;
-                    case 'SPND':    this->ParseShapeNodeTag(fp, tag); break;
-                    case 'MANI':    this->ParseAnimatorNodeTag(fp, tag); break;
-                    case 'PSND':    this->ParseParticleSystemNodeTag(fp, tag); break;
-                    case 'CHRN':    this->ParseCharacterNodeTag(fp, tag); break;
-                    case 'CHSN':    this->ParseCharacterSkinNodeTag(fp, tag); break;
+                    case 'TRFN':    this->parseTransformNodeTag(fp, tag); break;
+                    case 'SPND':    this->parseShapeNodeTag(fp, tag); break;
+                    case 'MANI':    this->parseAnimatorNodeTag(fp, tag); break;
+                    case 'PSND':    this->parseParticleSystemNodeTag(fp, tag); break;
+                    case 'CHRN':    this->parseCharacterNodeTag(fp, tag); break;
+                    case 'CHSN':    this->parseCharacterSkinNodeTag(fp, tag); break;
                     default:        Log::Fatal("Unknown class tag in .n3 file\n");
                 }
                 break;
@@ -87,7 +87,7 @@ N3Loader::LoadN3(const std::string& path) {
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseModelNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseModelNodeTag(FILE* fp, uint32_t tag) {
     N3Node& node = this->Nodes.back();
     switch (tag) {
         case 'LBOX':
@@ -119,7 +119,7 @@ N3Loader::ParseModelNodeTag(FILE* fp, uint32_t tag) {
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseTransformNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseTransformNodeTag(FILE* fp, uint32_t tag) {
     N3Node& node = this->Nodes.back();
     switch (tag) {
         case 'POSI':
@@ -147,14 +147,14 @@ N3Loader::ParseTransformNodeTag(FILE* fp, uint32_t tag) {
             read<bool>(fp);
             break;
         default:
-            this->ParseModelNodeTag(fp, tag);
+            this->parseModelNodeTag(fp, tag);
             break;
     } 
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseStateNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseStateNodeTag(FILE* fp, uint32_t tag) {
     N3Node& node = this->Nodes.back();
     std::string paramName, strValue;
     int intValue = 0;
@@ -193,14 +193,14 @@ N3Loader::ParseStateNodeTag(FILE* fp, uint32_t tag) {
             read<glm::vec4>(fp);
             break;
         default:
-            this->ParseTransformNodeTag(fp, tag);
+            this->parseTransformNodeTag(fp, tag);
             break;
     }
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseShapeNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseShapeNodeTag(FILE* fp, uint32_t tag) {
     N3Node& node = this->Nodes.back();
     switch (tag) {
         case 'MESH':
@@ -211,14 +211,14 @@ N3Loader::ParseShapeNodeTag(FILE* fp, uint32_t tag) {
             node.PrimGroup = read<int>(fp);
             break;
         default:
-            this->ParseStateNodeTag(fp, tag);
+            this->parseStateNodeTag(fp, tag);
             break;
     }
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseAnimatorNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseAnimatorNodeTag(FILE* fp, uint32_t tag) {
     // animator nodes not supported, just skip everything
     static int nodeType = 0;
     int animKeySize = 0;
@@ -282,7 +282,7 @@ static void skipEnvelopeCurve(FILE* fp) {
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseParticleSystemNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseParticleSystemNodeTag(FILE* fp, uint32_t tag) {
     // skip all particle system tags
     switch (tag) {
         case 'EFRQ':
@@ -327,14 +327,14 @@ N3Loader::ParseParticleSystemNodeTag(FILE* fp, uint32_t tag) {
             read<int>(fp);
             break;
         default:
-            this->ParseStateNodeTag(fp, tag);
+            this->parseStateNodeTag(fp, tag);
             break;
     }
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseCharacterNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseCharacterNodeTag(FILE* fp, uint32_t tag) {
     N3Node& node = this->Nodes.back();
     switch (tag) {
         case 'ANIM':
@@ -380,14 +380,14 @@ N3Loader::ParseCharacterNodeTag(FILE* fp, uint32_t tag) {
             }
             break;
         default:
-            this->ParseTransformNodeTag(fp, tag);
+            this->parseTransformNodeTag(fp, tag);
             break;
     }
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ParseCharacterSkinNodeTag(FILE* fp, uint32_t tag) {
+N3Loader::parseCharacterSkinNodeTag(FILE* fp, uint32_t tag) {
     N3Node& node = this->Nodes.back();
     switch (tag) {
         case 'NSKF':
@@ -406,14 +406,14 @@ N3Loader::ParseCharacterSkinNodeTag(FILE* fp, uint32_t tag) {
             }
             break;
         default:
-            this->ParseShapeNodeTag(fp, tag);
+            this->parseShapeNodeTag(fp, tag);
             break;
     }
 }
 
 //------------------------------------------------------------------------------
 void
-N3Loader::LoadMeshes(const std::string& n3AssetDir) {
+N3Loader::loadMeshes(const std::string& n3AssetDir) {
     VertexLayout layout({
         { VertexAttr::Position, VertexFormat::Float3 },
         { VertexAttr::Normal, VertexFormat::Float3 },
@@ -449,7 +449,7 @@ N3Loader::LoadMeshes(const std::string& n3AssetDir) {
 
 //------------------------------------------------------------------------------
 void
-N3Loader::LoadAnims(const std::string& n3AssetDir) {
+N3Loader::loadAnims(const std::string& n3AssetDir) {
     this->nax3Loader.Clear();
     
     // look for a character node with an animation (there should
@@ -465,7 +465,7 @@ N3Loader::LoadAnims(const std::string& n3AssetDir) {
 
 //------------------------------------------------------------------------------
 void
-N3Loader::ToIRep(IRep& irep) {
+N3Loader::toIRep(IRep& irep) {
     // vertex components
     for (const auto& srcComp : this->nvx2Loader.Meshes[0].Components) {
         IRep::VertexComponent dstComp;

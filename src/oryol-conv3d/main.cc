@@ -9,6 +9,7 @@
 #include "IRepJsonDumper.h"
 #include "OrbSaver.h"
 #include "IRepProcessor.h"
+#include "AssimpLoader.h"
 
 using namespace OryolTools;
 
@@ -50,6 +51,11 @@ int main(int argc, const char** argv) {
             std::string json = N3JsonDumper::Dump(n3Loader);
             Log::Info("%s\n", json.c_str());
         }
+    }
+    else {
+        // not an N3 file, try to load via assimp
+        AssimpLoader assimpLoader;
+        assimpLoader.Load(inFile, irep);
     }
 
     // process the IRep?

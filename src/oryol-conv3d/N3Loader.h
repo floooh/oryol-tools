@@ -18,30 +18,30 @@ struct N3Loader {
     void Load(const std::string& n3AssetName, const std::string& n3AssetDir, IRep& irep);
 
     /// load N3 model into internal data structures
-    void LoadN3(const std::string& path);
+    void loadN3(const std::string& path);
     /// load NVX2 mesh data
-    void LoadMeshes(const std::string& n3AssetDir);
+    void loadMeshes(const std::string& n3AssetDir);
     /// load NAX3 animation data
-    void LoadAnims(const std::string& n3AssetDir);
+    void loadAnims(const std::string& n3AssetDir);
     /// write loading result into intermediate representation
-    void ToIRep(IRep& irep);
+    void toIRep(IRep& irep);
 
     /// parse a top-level ModelNode tag
-    void ParseModelNodeTag(FILE* fp, uint32_t tag);
+    void parseModelNodeTag(FILE* fp, uint32_t tag);
     /// parse a TransformNode tag
-    void ParseTransformNodeTag(FILE* fp, uint32_t tag);
+    void parseTransformNodeTag(FILE* fp, uint32_t tag);
     /// parse a StateNode tag
-    void ParseStateNodeTag(FILE* fp, uint32_t tag);
+    void parseStateNodeTag(FILE* fp, uint32_t tag);
     /// parse a ShapeNode tag
-    void ParseShapeNodeTag(FILE* fp, uint32_t tag);
+    void parseShapeNodeTag(FILE* fp, uint32_t tag);
     /// parse an AnimatorNode tag
-    void ParseAnimatorNodeTag(FILE* fp, uint32_t tag);
+    void parseAnimatorNodeTag(FILE* fp, uint32_t tag);
     /// parse a ParticleSystemNode tag
-    void ParseParticleSystemNodeTag(FILE* fp, uint32_t tag);
+    void parseParticleSystemNodeTag(FILE* fp, uint32_t tag);
     /// parse a CharacterNode tag
-    void ParseCharacterNodeTag(FILE* fp, uint32_t tag);
+    void parseCharacterNodeTag(FILE* fp, uint32_t tag);
     /// parse a CharacterSkinNode tag
-    void ParseCharacterSkinNodeTag(FILE* fp, uint32_t tag);
+    void parseCharacterSkinNodeTag(FILE* fp, uint32_t tag);
 
     struct N3Node {
         uint32_t ClassTag = 0;

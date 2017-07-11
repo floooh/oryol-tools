@@ -8,6 +8,7 @@ fips_begin_app(oryol-conv3d cmdline)
         NVX2Loader.h NVX2Loader.cc
         NAX3Loader.h NAX3Loader.cc
         N3JsonDumper.h N3JsonDumper.cc
+        AssimpLoader.h AssimpLoader.cc
         IRepJsonDumper.h IRepJsonDumper.cc
         OrbSaver.h OrbSaver.cc
     )
