@@ -217,27 +217,9 @@ cJSON* extract_resource_info(Compiler* compiler) {
 void fix_vertex_attr_locations(Compiler* compiler) {
     if (compiler->get_execution_model() == ExecutionModelVertex) {
         ShaderResources res = compiler->get_shader_resources();
+        uint32_t loc = 0;
         for (const auto& input : res.stage_inputs) {
-            int loc = -1;
-            if (input.name == "position")       loc = 0;
-            else if (input.name == "normal")    loc = 1;
-            else if (input.name == "texcoord0") loc = 2;
-            else if (input.name == "texcoord1") loc = 3;
-            else if (input.name == "texcoord2") loc = 4;
-            else if (input.name == "texcoord3") loc = 5;
-            else if (input.name == "tangent")   loc = 6;
-            else if (input.name == "binormal")  loc = 7;
-            else if (input.name == "weights")   loc = 8;
-            else if (input.name == "indices")   loc = 9;
-            else if (input.name == "color0")    loc = 10;
-            else if (input.name == "color1")    loc = 11;
-            else if (input.name == "instance0") loc = 12;
-            else if (input.name == "instance1") loc = 13;
-            else if (input.name == "instance2") loc = 14;
-            else if (input.name == "instance3") loc = 15;
-            if (-1 != loc) {
-                compiler->set_decoration(input.id, DecorationLocation, (uint32_t)loc);
-            }
+            compiler->set_decoration(input.id, DecorationLocation, loc++);
         }
     }
 }
