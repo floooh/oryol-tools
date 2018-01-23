@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------
 #include "IRepProcessor.h"
 #include "LoadUtil.h"
+#include <algorithm>
 #include "cJSON.h"
 extern "C" {
 #include "cJSON_Utils.h"

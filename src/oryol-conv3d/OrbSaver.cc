@@ -6,6 +6,7 @@
 #include "ExportUtil/VertexCodec.h"
 #include <glm/glm.hpp>
 #include <stdio.h>
+#include <algorithm>
 
 using namespace OryolTools;
 using namespace Oryol;
