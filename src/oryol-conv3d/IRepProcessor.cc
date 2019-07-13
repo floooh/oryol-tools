@@ -1,6 +1,8 @@
 //------------------------------------------------------------------------------
 //  IRepProcessor.cc
 //------------------------------------------------------------------------------
+#include <algorithm>
+
 #include "IRepProcessor.h"
 #include "LoadUtil.h"
 #include "cJSON.h"
@@ -36,7 +38,7 @@ IRepProcessor::Load(const string& path) {
     const char* str = (const char*) load_file(path);
     cJSON* json = cJSON_Parse(str);
     free_file_data((const uint8_t*)str);
-    Log::FailIf(!json, "Failed to parse JSON file '%s' with '%s'\n", path.c_str(), cJSON_GetErrorPtr()); 
+    Log::FailIf(!json, "Failed to parse JSON file '%s' with '%s'\n", path.c_str(), cJSON_GetErrorPtr());
     cJSON* node;
     if ((node = cJSONUtils_GetPointer(json, "/filter/nodes"))) {
         parseStringArray("/filter/nodes", node, this->Nodes);
@@ -52,7 +54,7 @@ static bool contains(const vector<string>& items, const string& item) {
 }
 
 //------------------------------------------------------------------------------
-static vector<string> 
+static vector<string>
 matchItems(const vector<string>& allItems, const vector<string>& filterItems) {
     // return a string vector with all items not in filter-items
     vector<string> res;

@@ -1,6 +1,8 @@
 //------------------------------------------------------------------------------
 //  OrbSaver.cc
 //------------------------------------------------------------------------------
+#include <algorithm>
+
 #include "OrbSaver.h"
 #include "ExportUtil/Log.h"
 #include "ExportUtil/VertexCodec.h"
@@ -293,7 +295,7 @@ OrbSaver::Save(const std::string& path, const IRep& irep) {
             }
             fwrite(&dst, 1, sizeof(dst), fp);
         }
-    } 
+    }
 
     // write anim clips
     {
