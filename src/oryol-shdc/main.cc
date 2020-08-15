@@ -282,11 +282,11 @@ void write_reflection_json(Compiler* compiler, const string& out_path) {
 //------------------------------------------------------------------------------
 void to_glsl(const vector<uint32_t>& spirv, const string& out_path, uint32_t version, bool is_es) {
     CompilerGLSL compiler(spirv);
-    auto opts = compiler.get_options();
+    auto opts = compiler.get_common_options();
     opts.version = version;
     opts.es = is_es;
     opts.vertex.fixup_clipspace = false;
-    compiler.set_options(opts);
+    compiler.set_common_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
     flatten_uniform_blocks(&compiler);
@@ -303,11 +303,15 @@ void to_glsl(const vector<uint32_t>& spirv, const string& out_path, uint32_t ver
 //------------------------------------------------------------------------------
 void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& out_path) {
     CompilerHLSL compiler(spirv);
-    auto opts = compiler.get_options();
+    
+    auto common_opts = compiler.get_common_options();
+    common_opts.vertex.fixup_clipspace = true;
+    compiler.set_common_options(common_opts);
+    
+    auto opts = compiler.get_hlsl_options();
     opts.shader_model = 50;
-    opts.fixup_clipspace = true;
     opts.point_size_compat = true;
-    compiler.set_options(opts);
+    compiler.set_hlsl_options(opts);
     fix_vertex_attr_locations(&compiler);
     fix_ub_matrix_force_colmajor(&compiler);
     write_reflection_json(&compiler, out_path + ".json");
@@ -323,9 +327,9 @@ void to_hlsl_sm5(const vector<uint32_t>& spirv, const string& out_path) {
 //------------------------------------------------------------------------------
 void to_mlsl(const vector<uint32_t>& spirv, const string& out_path) {
     CompilerMSL compiler(spirv);
-    auto opts = compiler.get_options();
-    opts.pad_and_pack_uniform_structs = true;
-    compiler.set_options(opts);
+    auto opts = compiler.get_msl_options();
+    //opts.pad_and_pack_uniform_structs = true;
+    compiler.set_msl_options(opts);
     fix_vertex_attr_locations(&compiler);
     write_reflection_json(&compiler, out_path + ".json");
     string src = compiler.compile();
